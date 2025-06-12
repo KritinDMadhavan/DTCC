@@ -88,7 +88,7 @@ const ISO42001AuditPage: React.FC = () => {
       try {
         // Try to check for models - if successful, auto-complete certain subsections
         const modelsResponse = await axios.get(
-          `http://localhost:8000/ml/dummy-1/models/list`,
+          `https://prism-backend-dtcc-dot-block-convey-p1.uc.r.appspot.com/ml/dummy-1/models/list`,
           config
         );
 
