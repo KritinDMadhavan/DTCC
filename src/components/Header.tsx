@@ -173,7 +173,7 @@ const Header: React.FC<HeaderProps> = ({
                   PRISM
                 </h1>
                 <span className="text-xs text-gray-500 font-normal">
-                  Block Convey<b> X </b>DTCC
+                  by Block Convey
                 </span>
               </div>
             </Link>

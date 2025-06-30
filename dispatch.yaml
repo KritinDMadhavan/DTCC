@@ -1,0 +1,21 @@
+dispatch:
+  - url: "api.blockconvey.com/*"
+    service: api-distributed-storage-staging 
+
+  - url: "www.blockconvey.com/*"
+    service: redirect-service
+
+  - url: "blockconvey.com/*"
+    service: blockconvey-main-website
+
+  - url: "console.blockconvey.com/*"
+    service: api-service-console-frontend
+
+  - url: "drive.blockconvey.com/*"
+    service: api-service-blockconvey-storage
+
+  - url: "prism.blockconvey.com/*"
+    service: api-service-blockconvey-aigovernance
+  
+  - url: "demo.blockconvey.com/*"
+    service: api-service-blockconvey-iso

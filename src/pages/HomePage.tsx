@@ -485,7 +485,7 @@ const HomePage: React.FC = () => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <h1 className="text-3xl font-medium text-gray-900">
-                  PRISM Dashboard DTCC <b>X</b> Hackathon
+                  PRISM Dashboard 
                 </h1>
               </div>
               <p className="text-gray-600 font-medium">

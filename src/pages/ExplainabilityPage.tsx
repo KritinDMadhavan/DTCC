@@ -20,10 +20,10 @@ import { InfoTooltip } from "../components/InfoTooltip";
 import { supabase } from "../lib/supabase";
 // Add API data interface
 interface ExplainabilityApiResponse {
-  project_id: number;
-  model_name: string;
-  model_version: string;
-  timestamp: string;
+  project_id?: number;
+  model_name?: string;
+  model_version?: string;
+  timestamp?: string;
   feature_importance: {
     importances: number[];
     feature_names: string[];
@@ -42,6 +42,54 @@ interface ExplainabilityApiResponse {
       feature_names: string[];
     };
   };
+  transparency_analysis?: {
+    model_complexity: string;
+    interpretability_level: string;
+    transparency_score: number;
+    explanation_methods_available: string[];
+    model_characteristics: any;
+  };
+  explanation_consistency?: {
+    global_local_correlation: number;
+    feature_importance_consistency: string;
+    explanation_stability: string;
+    top_features_agreement: number;
+    analysis_status: string;
+    error?: string;
+  };
+  attribution_analysis?: {
+    significant_features: string[];
+    feature_contribution_distribution: any;
+    attribution_concentration: number;
+    feature_interaction_detected: boolean;
+    top_positive_features: string[];
+    top_negative_features: string[];
+    analysis_status: string;
+    error?: string;
+  };
+  explainability_summary?: {
+    overall_explainability_score: number;
+    explainability_status: string;
+    key_insights: string[];
+    recommendations: string[];
+    method_availability: {
+      feature_importance: boolean;
+      shap_explanations: boolean;
+      lime_explanations: boolean;
+      transparency_analysis: boolean;
+    };
+    explanation_quality: {
+      consistency_level: string;
+      stability_level: string;
+      attribution_concentration: number;
+      significant_features_count: number;
+    };
+    risk_assessment: {
+      explanation_reliability: string;
+      regulatory_compliance: string;
+      business_trustworthiness: string;
+    };
+  };
 }
 
 // Add hook to fetch data
@@ -56,6 +104,12 @@ const useExplainabilityData = (
 
   useEffect(() => {
     const fetchData = async () => {
+      // Skip API call if no projectId provided (for dummy projects)
+      if (!projectId) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
 
       try {
@@ -69,10 +123,14 @@ const useExplainabilityData = (
           throw error;
         }
 
+        if (!data || data.length === 0) {
+          throw new Error("No model details found for this project");
+        }
+
         const modelId = data[0].model_id;
         const model_version = data[0].model_version;
 
-        const apiUrl = `https://prism-backend-dtcc-dot-block-convey-p1.uc.r.appspot.com/ml/explainability/${projectId}/${modelId}/${model_version}`;
+        const apiUrl = `https://block-convey-p1.uc.r.appspot.com/ml/explainability/${projectId}/${modelId}/${model_version}`;
 
         const response = await fetch(apiUrl, {
           headers: {
@@ -86,6 +144,7 @@ const useExplainabilityData = (
         }
 
         const apiData = await response.json();
+        console.log("API Response:", apiData);
         setData(apiData);
       } catch (err) {
         console.error("Failed to fetch explainability data:", err);
@@ -103,16 +162,30 @@ const useExplainabilityData = (
 
 // Adapted data processing functions for API response
 const processFeatureImportance = (data: ExplainabilityApiResponse | null) => {
-  if (!data) return [];
+  console.log("processFeatureImportance called with:", data);
+  
+  if (!data) {
+    console.log("No data provided to processFeatureImportance");
+    return [];
+  }
 
   // Handle both direct and metrics-wrapped data structures
   const featureData = data.feature_importance || 
+                     (data as any).metrics?.feature_importance ||
                      data.shap_importance || 
-                     (data as any).metrics?.feature_importance || 
                      (data as any).metrics?.shap_importance;
+  console.log("Feature data:", featureData);
+  console.log("Full data structure:", JSON.stringify(data, null, 2));
   
   // Add safety check for featureData
   if (!featureData || !featureData.importances || !featureData.feature_names) {
+    console.log("Missing feature data structure:", { 
+      hasFeatureData: !!featureData, 
+      hasImportances: !!featureData?.importances, 
+      hasFeatureNames: !!featureData?.feature_names,
+      hasMetrics: !!(data as any).metrics,
+      metricsKeys: (data as any).metrics ? Object.keys((data as any).metrics) : []
+    });
     return [];
   }
 
@@ -133,7 +206,9 @@ const processFeatureImportance = (data: ExplainabilityApiResponse | null) => {
     };
   });
 
-  return meanImportances.sort((a: any, b: any) => b.importance - a.importance);
+  const result = meanImportances.sort((a: any, b: any) => b.importance - a.importance);
+  console.log("processFeatureImportance result:", result);
+  return result;
 };
 
 const processShapDependence = (data: ExplainabilityApiResponse | null) => {
@@ -144,6 +219,12 @@ const processShapDependence = (data: ExplainabilityApiResponse | null) => {
   const shapImportance = data.shap_importance || (data as any).metrics?.shap_importance;
   
   if (!shap_values || !shapImportance || !shapImportance.feature_names) {
+    console.log("Missing SHAP data:", {
+      hasShapValues: !!shap_values,
+      hasShapImportance: !!shapImportance,
+      hasFeatureNames: !!shapImportance?.feature_names,
+      hasMetrics: !!(data as any).metrics
+    });
     return [];
   }
 
@@ -198,6 +279,12 @@ const processShapFeatureImportance = (
   const shapImportance = data.shap_importance || (data as any).metrics?.shap_importance;
   
   if (!shapImportance || !shapImportance.importances || !shapImportance.feature_names) {
+    console.log("Missing SHAP Feature Importance data:", {
+      hasShapImportance: !!shapImportance,
+      hasImportances: !!shapImportance?.importances,
+      hasFeatureNames: !!shapImportance?.feature_names,
+      hasMetrics: !!(data as any).metrics
+    });
     return [];
   }
 
@@ -534,6 +621,104 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
   );
 };
 
+// Suggestion Card Component
+const SuggestionCard = ({ data }: { data: ExplainabilityApiResponse | null }) => {
+  const explainability_summary = data?.explainability_summary || (data as any)?.metrics?.explainability_summary;
+  
+  if (!explainability_summary) return null;
+  const score = explainability_summary.overall_explainability_score;
+  const status = explainability_summary.explainability_status;
+  
+  const getScoreColor = (score: number) => {
+    if (score >= 0.8) return "text-green-600 bg-green-100";
+    if (score >= 0.6) return "text-yellow-600 bg-yellow-100";
+    return "text-red-600 bg-red-100";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'excellent': return "bg-green-100 text-green-800";
+      case 'good': return "bg-blue-100 text-blue-800";
+      case 'moderate': return "bg-yellow-100 text-yellow-800";
+      case 'poor': return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  return (
+    <motion.div
+      whileHover={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+      transition={{ duration: 0.3 }}
+      className="bg-white rounded-xl p-6 shadow-md border border-gray-100"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">Explainability Analysis Summary</h2>
+        <div className="flex items-center space-x-3">
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status)}`}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </span>
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(score)}`}>
+            {Math.round(score * 100)}%
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Key Insights */}
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">Key Insights</h3>
+          <div className="space-y-2">
+            {explainability_summary.key_insights.map((insight: string, idx: number) => (
+              <div key={idx} className="flex items-start space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <p className="text-sm text-gray-700">{insight}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recommendations */}
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">Recommendations</h3>
+          <div className="space-y-2">
+            {explainability_summary.recommendations.map((recommendation: string, idx: number) => (
+              <div key={idx} className="flex items-start space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                <p className="text-sm text-gray-700">{recommendation}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Risk Assessment */}
+      <div className="mt-6 pt-4 border-t border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900 mb-3">Explainability Assessment</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Explanation Reliability</p>
+            <p className="font-medium text-gray-900 capitalize">
+              {explainability_summary.risk_assessment.explanation_reliability}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Regulatory Compliance</p>
+            <p className="font-medium text-gray-900 capitalize">
+              {explainability_summary.risk_assessment.regulatory_compliance}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Business Trust</p>
+            <p className="font-medium text-gray-900 capitalize">
+              {explainability_summary.risk_assessment.business_trustworthiness}
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 // SHAP Feature Importance
 const ShapFeatureImportanceChart = ({ data }: { data: any[] }) => (
   <div className="w-full h-[300px]">
@@ -597,10 +782,10 @@ const ExplainabilityPage: React.FC = () => {
   // Set default modelId for dummy project
   const effectiveModelId = isDummyProject ? "demo-model" : modelId;
 
-  // Always create the hook with empty values for dummy projects
+  // Skip API call for dummy projects
   const { data, loading, error } = useExplainabilityData(
-    id || "",
-    effectiveModelId || ""
+    isDummyProject ? "" : (id || ""),
+    isDummyProject ? "" : (effectiveModelId || "")
   );
 
   // Always use demo data for dummy projects, otherwise fallback to demo data if API fails
@@ -621,6 +806,16 @@ const ExplainabilityPage: React.FC = () => {
     : data
     ? processShapFeatureImportance(data)
     : explainabilityData.shapFeatureImportance;
+
+  // Debug logging
+  console.log("ExplainabilityPage Debug:", {
+    isDummyProject,
+    hasData: !!data,
+    featureImportanceDataLength: featureImportanceData?.length,
+    shapDependenceDataLength: shapDependenceData?.length,
+    shapFeatureImportanceDataLength: shapFeatureImportanceData?.length,
+    rawData: data
+  });
 
   const breadcrumbSegments = [
     { title: "Projects", href: "/home" },
@@ -948,16 +1143,28 @@ const ExplainabilityPage: React.FC = () => {
     >
       
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Explainability Analysis
-        </h1>
-        <p className="text-gray-500 mt-1">
-          {data
-            ? `Model: ${data.model_name} (v${data.model_version})`
-            : isDummyProject
-            ? "Demo Explainability Analysis"
-            : "Understanding model decisions and feature importance"}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Explainability Analysis
+            </h1>
+            <p className="text-gray-500 mt-1">
+              {data
+                ? `Model: ${data.model_name || 'Unknown'} (v${data.model_version || '1.0.0'})`
+                : isDummyProject
+                ? "Demo Explainability Analysis"
+                : "Understanding model decisions and feature importance"}
+            </p>
+          </div>
+          {(data?.explainability_summary || (data as any)?.metrics?.explainability_summary) && (
+            <div className="text-right">
+              <p className="text-sm text-gray-600">Overall Explainability Score</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {Math.round((data?.explainability_summary || (data as any)?.metrics?.explainability_summary)?.overall_explainability_score * 100)}%
+              </p>
+            </div>
+          )}
+        </div>
         {error && (
           <p className="mt-2 text-sm text-red-500">
           
@@ -965,7 +1172,8 @@ const ExplainabilityPage: React.FC = () => {
         )}
       </div>
 
-
+      {/* Suggestion Card */}
+      <SuggestionCard data={data} />
 
       {/* Feature Importance */}
       <motion.div

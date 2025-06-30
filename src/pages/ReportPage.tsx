@@ -245,10 +245,24 @@ const ReportPage: React.FC = () => {
   }, [id, isDummyProject]);
 
   useEffect(() => {
-    // Check if risk assessment was generated for this project
+    // Check if risk assessment was generated for this project AND has PDF data
     const wasGenerated = localStorage.getItem(`riskAssessmentGenerated_${id}`);
     const timestamp = localStorage.getItem(`riskAssessmentTimestamp_${id}`);
-    setHasRiskAssessment(wasGenerated === "true");
+    
+    // Also check if there's actually PDF data available
+    let hasPdfData = false;
+    try {
+      const storedAnalysis = localStorage.getItem(`riskAssessment_${id}`);
+      if (storedAnalysis) {
+        const analysisData = JSON.parse(storedAnalysis);
+        hasPdfData = !!analysisData.pdfData;
+      }
+    } catch (error) {
+      console.error("Error checking PDF data:", error);
+    }
+    
+    // Only show AI Risk Assessment card if generated AND has PDF data
+    setHasRiskAssessment(wasGenerated === "true" && hasPdfData);
     setRiskAssessmentTimestamp(timestamp);
   }, [id]);
 
@@ -269,10 +283,10 @@ const ReportPage: React.FC = () => {
       );
       console.log("Set sections in sessionStorage:", sectionsToAutoComplete);
 
-      // 2. Then start the download process
+      // 2. Start the download process
       setReportGeneration({
-        status: ReportGenerationStatus.GENERATING,
-        message: "Retrieving AI Risk Assessment analysis...",
+        status: ReportGenerationStatus.DOWNLOADING,
+        message: "Retrieving stored PDF report...",
       });
 
       const storedAnalysis = localStorage.getItem(`riskAssessment_${id}`);
@@ -290,13 +304,19 @@ const ReportPage: React.FC = () => {
       const analysisData = JSON.parse(storedAnalysis);
       const projectName = analysisData.projectName || "AI System";
 
-      setReportGeneration({
-        status: ReportGenerationStatus.DOWNLOADING,
-        message: "Downloading stored PDF report...",
+      console.log("Stored analysis data:", {
+        hasData: !!analysisData,
+        hasPdfData: !!analysisData.pdfData,
+        keys: Object.keys(analysisData),
+        pdfDataType: typeof analysisData.pdfData,
+        pdfDataLength: analysisData.pdfData ? analysisData.pdfData.length : 0
       });
 
+      // Check if PDF data exists in the stored analysis
       if (analysisData.pdfData) {
-        // Convert base64 and download
+        console.log("Found stored PDF data, downloading...");
+        
+        // Convert base64 to blob and download
         const pdfBase64 = analysisData.pdfData;
         const byteCharacters = atob(pdfBase64);
         const byteNumbers = new Array(byteCharacters.length);
@@ -319,6 +339,8 @@ const ReportPage: React.FC = () => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
+        console.log("PDF downloaded successfully");
+
         setReportGeneration({
           status: ReportGenerationStatus.COMPLETED,
           message: "AI Risk Assessment report downloaded successfully!",
@@ -339,8 +361,22 @@ const ReportPage: React.FC = () => {
           });
         }, 3000);
       } else {
-        // Handle PDF generation fallback
-        // ... existing fallback code ...
+        console.error("No PDF data found in stored analysis");
+        setReportGeneration({
+          status: ReportGenerationStatus.ERROR,
+          message: "No PDF report found. Please generate the report first.",
+        });
+        
+        // Show more helpful message
+        setTimeout(() => {
+          alert(
+            "No PDF report found. Please go to the Risk Assessment page and click 'Generate Report' to create the PDF first."
+          );
+          setReportGeneration({
+            status: ReportGenerationStatus.IDLE,
+            message: null,
+          });
+        }, 1000);
       }
     } catch (error) {
       console.error("Error in handleDownloadRiskAssessment:", error);
