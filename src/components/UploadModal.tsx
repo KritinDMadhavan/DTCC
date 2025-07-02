@@ -70,11 +70,107 @@ const UploadModal = ({
   // Move these state declarations up here - they were defined AFTER the return statement
   const [availableProjects, setAvailableProjects] = useState([]);
   const [selectedProjectName, setSelectedProjectName] = useState("");
+  const [isGitHubImportMode, setIsGitHubImportMode] = useState(false);
+  const [githubAuthCode, setGithubAuthCode] = useState<string | null>(null);
+  // GitHub repo navigation state
+  const [repoNames, setRepoNames] = useState<string[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState<string>("");
+  const [pathStack, setPathStack] = useState<string[]>([]); // For folder navigation
+  const [currentContents, setCurrentContents] = useState<any[]>([]); // Contents at current path
+  const [dropdowns, setDropdowns] = useState<any[][]>([]); // Array of arrays for each dropdown level
+  const [isGitHubConnected, setIsGitHubConnected] = useState(false);
+  const [selectedGitHubFile, setSelectedGitHubFile] = useState<string>("");
+  const [stepError, setStepError] = useState<string>("");
+
+  // Check for GitHub connection on mount
+  useEffect(() => {
+    setIsGitHubConnected(!!localStorage.getItem("accessToken"));
+    if (localStorage.getItem("accessToken")) {
+      // Fetch repos if connected
+      fetchGitHubRepos();
+    }
+  }, []);
+
+  // Fetch GitHub repos
+  const fetchGitHubRepos = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+      try {
+        const response = await fetch("http://localhost:8000/getUserRepos", {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+          },
+        });
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const names = data.map((repo: any) => repo.full_name);
+          setRepoNames(names);
+          if (names.length > 0) setSelectedRepo(names[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching GitHub repos:", error);
+      }
+    }
+  };
+
+  // Fetch repo contents when selectedRepo or pathStack changes
+  useEffect(() => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (selectedRepo && accessToken) {
+      const path = pathStack.join("/");
+      fetch(
+        `http://localhost:8000/getRepoContents?repo=${encodeURIComponent(
+          selectedRepo
+        )}${path ? `&path=${encodeURIComponent(path)}` : ""}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+          },
+        }
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          setCurrentContents(data);
+          // Update dropdowns: keep previous, add new
+          setDropdowns((prev) => {
+            const newDropdowns = prev.slice(0, pathStack.length);
+            newDropdowns[pathStack.length] = data;
+            return newDropdowns;
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching repo contents:", error);
+        });
+    }
+  }, [selectedRepo, pathStack]);
+
+  // Handle dropdown selection
+  const handleDropdownSelect = (level: number, item: any) => {
+    if (item.type === "dir") {
+      // Go deeper into folder
+      setPathStack((prev) => [...prev.slice(0, level), item.name]);
+    } else if (item.type === "file") {
+      // Log full path
+      const fullPath = [
+        selectedRepo,
+        ...pathStack.slice(0, level),
+        item.name,
+      ].join("/");
+      setSelectedGitHubFile(fullPath); // Track selected file
+      // Optionally, reset dropdowns deeper than this level
+      setDropdowns((prev) => prev.slice(0, level + 1));
+      setPathStack((prev) => prev.slice(0, level)); // Don't go deeper after file
+      console.log("Selected file:", fullPath);
+      // TODO: Handle file selection (e.g., download or use the file)
+    }
+  };
 
   // Fix the process.env reference issue
-  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "https://block-convey-p1.uc.r.appspot.com";
+  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "http://localhost:8000";
   // If you're using Create React App instead of Vite, use this:
-  // const baseUrl = window.env?.REACT_APP_API_BASE_URL || 'https://block-convey-p1.uc.r.appspot.com/api';
+  // const baseUrl = window.env?.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
   // Send a signal to parent component to show animation on the page
   const emitProcessingSignal = (status, data = {}) => {
@@ -149,21 +245,42 @@ const UploadModal = ({
   // For example, replace instances of projectId with p_id in your API calls
 
   const handleNext = () => {
+    setStepError(""); // Clear previous error
     if (currentStep === 0) {
-      // Validate required fields for step 1
-      if (!formData.name || !formData.model_type || !formData.file) {
-        alert("Please fill all required fields");
-        return;
+      // If GitHub is connected, require a .pkl file from GitHub
+      if (isGitHubConnected) {
+        if (!selectedGitHubFile) {
+          setStepError("Please select a .pkl model file from GitHub.");
+          return;
+        }
+        if (!selectedGitHubFile.endsWith(".pkl")) {
+          setStepError("Please select a MLModel file (.pkl) from GitHub.");
+          return;
+        }
+        // Store the selected GitHub file path in formData.file for later use
+        setFormData((prev) => ({ ...prev, file: selectedGitHubFile }));
+      } else {
+        // Validate required fields for step 1 (browser upload)
+        if (!formData.name || !formData.model_type || !formData.file) {
+          setStepError("Please fill all required fields");
+          return;
+        }
+        if (
+          formData.file &&
+          typeof formData.file !== "string" &&
+          !formData.file.name.endsWith(".pkl")
+        ) {
+          setStepError("Please select a MLModel file (.pkl)");
+          return;
+        }
       }
-
       // Move to next step without API call
       setCurrentStep(currentStep + 1);
     } else if (currentStep === 1) {
       if (!formData.dataset) {
-        alert("Please upload a dataset");
+        setStepError("Please upload a dataset");
         return;
       }
-
       // Move to next step without API call
       setCurrentStep(currentStep + 1);
     } else {
@@ -190,6 +307,38 @@ const UploadModal = ({
         throw new Error("Please upload a dataset");
       }
 
+      // If GitHub is connected and file is a string (GitHub path), fetch the file from backend
+      let fileToUpload = formData.file;
+      console.log("fileToUpload", fileToUpload);
+      if (isGitHubConnected && typeof formData.file === "string") {
+        // Parse repo and path from the GitHub file string
+        // Example: repo = "username/repo", path = "folder/model.pkl"
+        const [repo, ...pathParts] = formData.file.split("/");
+        const repoName = repo + "/" + pathParts.shift();
+        const filePath = pathParts.join("/");
+        const githubToken = localStorage.getItem("accessToken");
+        const downloadUrl = `${baseUrl}/downloadRepoFile?repo=${encodeURIComponent(
+          repoName
+        )}&path=${encodeURIComponent(filePath)}`;
+        const response = await fetch(downloadUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to download file from GitHub.");
+        }
+        const blob = await response.blob();
+        console.log("blob", blob);
+        // Use the filename from the path
+        const filename = filePath.split("/").pop() || "model.pkl";
+        fileToUpload = new File([blob], filename, {
+          type: blob.type || "application/octet-stream",
+        });
+        console.log("fileToUpload part 2:", fileToUpload);
+      }
+
       // Dispatch event to trigger animation in ProjectOverviewPage
       const startEvent = new CustomEvent("modelProcessingStart", {
         detail: {
@@ -203,8 +352,11 @@ const UploadModal = ({
       // Close modal immediately to show the animation on the page
       onClose();
 
-      // Get authentication token
-      const token = localStorage.getItem("access_token");
+      // Get authentication token - try both Supabase and GitHub tokens
+      const supabaseToken = localStorage.getItem("access_token");
+      const githubToken = localStorage.getItem("accessToken");
+      const token = supabaseToken || githubToken;
+
       if (!token) {
         throw new Error("Authentication token not found. Please log in again.");
       }
@@ -216,7 +368,7 @@ const UploadModal = ({
       modelFormData.append("name", formData.name);
       modelFormData.append("model_type", formData.model_type);
       modelFormData.append("version", formData.version);
-      modelFormData.append("file", formData.file);
+      modelFormData.append("file", fileToUpload);
       if (formData.description) {
         modelFormData.append("description", formData.description);
       }
@@ -481,6 +633,23 @@ const UploadModal = ({
         [fileType]: file,
       });
     }
+  };
+
+  // Handle GitHub model import
+  const handleGitHubImport = async () => {
+    // TODO: Implement GitHub model import functionality
+    console.log("GitHub import functionality to be implemented");
+
+    // Redirect to GitHub OAuth with the correct callback URL
+    const redirectUri = encodeURIComponent(
+      `${window.location.origin}/github/callback`
+    );
+    const clientId = "Ov23licv8OIoqToCAzBq";
+    const scope = encodeURIComponent("repo read:user");
+
+    window.location.assign(
+      `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`
+    );
   };
 
   // Modal title based on mode
@@ -806,13 +975,143 @@ const UploadModal = ({
             )}
           </div>
 
-          <div className="p-4 bg-gray-50 rounded-lg">
-            {apiError && (
-              <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-200 rounded">
-                {apiError}
-              </div>
-            )}
+          {/* GitHub Import Section - Only show if connected */}
+          {isGitHubConnected && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <h5 className="text-lg font-medium mb-4 text-gray-800 flex items-center">
+                <span className="bg-green-600 text-white w-7 h-7 rounded-full inline-flex items-center justify-center mr-2 text-sm">
+                  ✓
+                </span>
+                Import from GitHub
+              </h5>
 
+              {/* Repo Selection */}
+              {repoNames.length > 0 && (
+                <div className="mb-4">
+                  <label className="block font-medium mb-2 text-gray-700">
+                    Select Repository:
+                  </label>
+                  <select
+                    value={selectedRepo}
+                    onChange={(e) => {
+                      setSelectedRepo(e.target.value);
+                      setPathStack([]); // Reset path stack on repo change
+                      setDropdowns([]);
+                    }}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {repoNames.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Dynamic Dropdowns for folder navigation */}
+              {dropdowns.map((contents, level) => {
+                // Determine the selected value for this dropdown
+                let selectedIdx = "";
+                if (pathStack[level]) {
+                  selectedIdx = contents
+                    .findIndex((item) => item.name === pathStack[level])
+                    ?.toString();
+                } else if (selectedGitHubFile && level === pathStack.length) {
+                  // If a file is selected at this level, find its index
+                  const fileName = selectedGitHubFile.split("/").pop();
+                  selectedIdx = contents
+                    .findIndex((item) => item.name === fileName)
+                    ?.toString();
+                }
+                return (
+                  <div key={level} className="mb-4">
+                    <label className="block font-medium mb-2 text-gray-700">
+                      Select from {pathStack[level - 1] || "root"}:
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedIdx || ""}
+                        onChange={(e) => {
+                          const idx = e.target.value;
+                          if (idx !== "")
+                            handleDropdownSelect(level, contents[idx]);
+                        }}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm appearance-none text-base font-medium hover:border-blue-400 transition-all"
+                        style={{ minHeight: 48 }}
+                      >
+                        <option value="">
+                          {selectedIdx && contents[selectedIdx]
+                            ? `${
+                                contents[selectedIdx].type === "dir"
+                                  ? "📁"
+                                  : "📄"
+                              } ${contents[selectedIdx].name}`
+                            : "Select file/folder"}
+                        </option>
+                        {contents.map((item, idx) => (
+                          <option
+                            key={item.sha}
+                            value={idx}
+                            className="flex items-center"
+                          >
+                            {item.type === "dir" ? "📁" : "📄"} {item.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* GitHub Connect Button - Only show if not connected */}
+          {!isGitHubConnected && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <h5 className="text-lg font-medium mb-4 text-gray-800 flex items-center">
+                <span className="bg-blue-600 text-white w-7 h-7 rounded-full inline-flex items-center justify-center mr-2 text-sm">
+                  ⚙️
+                </span>
+                Connect to GitHub
+              </h5>
+              <p className="text-gray-600 mb-4">
+                Connect your GitHub account to import models from your
+                repositories.
+              </p>
+              <button
+                onClick={handleGitHubImport}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+                Connect GitHub Account
+              </button>
+            </div>
+          )}
+
+          <div className="p-4 bg-gray-50 rounded-lg">
             {isLoading && (
               <div className="mb-4 p-3 bg-blue-100 text-blue-700 border border-blue-200 rounded flex items-center">
                 <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
@@ -846,158 +1145,184 @@ const UploadModal = ({
                   </span>
                 </h5>
 
-                <div className="space-y-5">
-                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
-                    <label className="block font-medium mb-2 text-gray-700 flex items-center">
-                      Model Name <span className="text-red-500 ml-1">*</span>
-                      <div className="relative ml-2 group">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 hidden group-hover:block">
-                          Give your model a descriptive name
-                        </div>
-                      </div>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter a unique model name"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
-                    <label className="block font-medium mb-2 text-gray-700 flex items-center">
-                      Model Version <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="1.0.0"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      value={formData.version}
-                      onChange={(e) =>
-                        setFormData({ ...formData, version: e.target.value })
-                      }
-                      required
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Use semantic versioning (e.g. 1.0.0)
-                    </p>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
-                    <label className="block font-medium mb-2 text-gray-700 flex items-center">
-                      Description <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Provide details about this model's purpose and characteristics"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
-                    <label className="block font-medium mb-2 text-gray-700 flex items-center">
-                      Model File <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <p className="text-sm text-gray-500 mb-3">
-                      Supports .pkl, .onnx, .h5, .pt, .joblib, etc.
-                    </p>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
-                      <input
-                        type="file"
-                        id="file"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload(e, "file")}
-                        required
-                      />
-                      <label
-                        htmlFor="file"
-                        className="cursor-pointer w-full h-full flex flex-col items-center"
+                {/* Model Name */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+                  <label className="block font-medium mb-2 text-gray-700 flex items-center">
+                    Model Name <span className="text-red-500 ml-1">*</span>
+                    <div className="relative ml-2 group">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
-                        <div className="text-blue-500 text-4xl mb-2">
-                          {formData.file ? "📄" : "⬆️"}
-                        </div>
-                        <p className="text-gray-700 font-medium mb-1">
-                          {formData.file ? "Change file" : "Upload model file"}
-                        </p>
-                        <p className="text-gray-500 text-sm">
-                          {formData.file
-                            ? formData.file.name
-                            : "Click to upload file here"}
-                        </p>
-                        {formData.file && (
-                          <span className="mt-2 inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                            <svg
-                              className="h-2 w-2 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 8 8"
-                            >
-                              <circle cx="4" cy="4" r="3" />
-                            </svg>
-                            File selected
-                          </span>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
-                    <label className="block font-medium mb-2 text-gray-700 flex items-center">
-                      Model Type <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <select
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white"
-                      value={formData.model_type || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, model_type: e.target.value })
-                      }
-                      required
-                    >
-                      <option value="" disabled>
-                        Select model type
-                      </option>
-                      <option value="classification">Classification</option>
-                      <option value="regression">Regression</option>
-                      <option value="clustering">Clustering</option>
-                      <option value="deeplearning">Deep Learning</option>
-                      <option value="timeseries">Time-Series</option>
-                    </select>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                        <svg
-                          className="fill-current h-4 w-4"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                        </svg>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 hidden group-hover:block">
+                        Give your model a descriptive name
                       </div>
                     </div>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter a unique model name"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                {/* Model Version */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+                  <label className="block font-medium mb-2 text-gray-700 flex items-center">
+                    Model Version <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="1.0.0"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={formData.version}
+                    onChange={(e) =>
+                      setFormData({ ...formData, version: e.target.value })
+                    }
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Use semantic versioning (e.g. 1.0.0)
+                  </p>
+                </div>
+
+                {/* Model Description */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+                  <label className="block font-medium mb-2 text-gray-700 flex items-center">
+                    Description <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Provide details about this model's purpose and characteristics"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        description: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+
+                {/* Model Type */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+                  <label className="block font-medium mb-2 text-gray-700 flex items-center">
+                    Model Type <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white"
+                    value={formData.model_type || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, model_type: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="" disabled>
+                      Select model type
+                    </option>
+                    <option value="classification">Classification</option>
+                    <option value="regression">Regression</option>
+                    <option value="clustering">Clustering</option>
+                    <option value="deeplearning">Deep Learning</option>
+                    <option value="timeseries">Time-Series</option>
+                  </select>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                      <svg
+                        className="fill-current h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Model File upload section remains after GitHub import */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+                  <label className="block font-medium mb-2 text-gray-700 flex items-center">
+                    Model File <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Supports .pkl, .onnx, .h5, .pt, .joblib, etc.
+                  </p>
+
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
+                    <input
+                      type="file"
+                      id="file"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, "file")}
+                      required
+                      disabled={isGitHubConnected}
+                    />
+                    <label
+                      htmlFor="file"
+                      className={`cursor-pointer w-full h-full flex flex-col items-center ${
+                        isGitHubConnected
+                          ? "opacity-50 pointer-events-none"
+                          : ""
+                      }`}
+                      title={
+                        isGitHubConnected
+                          ? "Disconnect GitHub to upload from your computer"
+                          : ""
+                      }
+                    >
+                      <div className="text-blue-500 text-4xl mb-2">
+                        {formData.file ? "📄" : "⬆️"}
+                      </div>
+                      <p className="text-gray-700 font-medium mb-1">
+                        {formData.file ? "Change file" : "Upload model file"}
+                      </p>
+                      <p className="text-gray-500 text-sm">
+                        {formData.file
+                          ? formData.file.name
+                          : "Click to upload file here"}
+                      </p>
+                      {isGitHubConnected && (
+                        <span className="mt-2 inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                          <svg
+                            className="h-2 w-2 mr-1"
+                            fill="currentColor"
+                            viewBox="0 0 8 8"
+                          >
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          Disconnect GitHub to enable file upload
+                        </span>
+                      )}
+                      {formData.file && !isGitHubConnected && (
+                        <span className="mt-2 inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                          <svg
+                            className="h-2 w-2 mr-1"
+                            fill="currentColor"
+                            viewBox="0 0 8 8"
+                          >
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          File selected
+                        </span>
+                      )}
+                    </label>
                   </div>
                 </div>
               </div>
@@ -1017,95 +1342,95 @@ const UploadModal = ({
 
                 <div className="mb-6">
                   {/* Dataset form sections */}
-                    <div className="space-y-5">
-                      <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
-                        <label className="block font-medium mb-2 text-gray-700 flex items-center">
-                          Dataset File{" "}
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <p className="text-sm text-gray-500 mb-3">
-                          Upload CSV, JSON, or DataFrame file
-                        </p>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
-                          <input
-                            type="file"
-                            id="dataset"
-                            className="hidden"
-                            onChange={(e) => handleFileUpload(e, "dataset")}
-                            required
-                          />
-                          <label
-                            htmlFor="dataset"
-                            className="cursor-pointer w-full h-full flex flex-col items-center"
-                          >
-                            <div className="text-blue-500 text-4xl mb-2">
-                              {formData.dataset ? "📊" : "⬆️"}
-                            </div>
-                            <p className="text-gray-700 font-medium mb-1">
-                              {formData.dataset
-                                ? "Change dataset"
-                                : "Upload dataset file"}
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                              {formData.dataset
-                                ? formData.dataset.name
-                                : "Click or drag file here"}
-                            </p>
-                            {formData.dataset && (
-                              <span className="mt-2 inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                <svg
-                                  className="h-2 w-2 mr-1"
-                                  fill="currentColor"
-                                  viewBox="0 0 8 8"
-                                >
-                                  <circle cx="4" cy="4" r="3" />
-                                </svg>
-                                Dataset selected
-                              </span>
-                            )}
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
-                        <label className="block font-medium mb-2 text-gray-700 flex items-center">
-                          Dataset Type{" "}
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <select
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white"
-                          value={formData.dataset_type || ""}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              dataset_type: e.target.value,
-                            })
-                          }
+                  <div className="space-y-5">
+                    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+                      <label className="block font-medium mb-2 text-gray-700 flex items-center">
+                        Dataset File{" "}
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <p className="text-sm text-gray-500 mb-3">
+                        Upload CSV, JSON, or DataFrame file
+                      </p>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
+                        <input
+                          type="file"
+                          id="dataset"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, "dataset")}
                           required
+                        />
+                        <label
+                          htmlFor="dataset"
+                          className="cursor-pointer w-full h-full flex flex-col items-center"
                         >
-                          <option value="" disabled>
-                            Select dataset type
-                          </option>
-                          <option value="text">Text</option>
-                          <option value="tabular">Tabular</option>
-                          <option value="categorical">Categorical</option>
-                        </select>
-                        <div className="relative">
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg
-                              className="fill-current h-4 w-4"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                            </svg>
+                          <div className="text-blue-500 text-4xl mb-2">
+                            {formData.dataset ? "📊" : "⬆️"}
                           </div>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Select the type that best describes your dataset
-                        </p>
+                          <p className="text-gray-700 font-medium mb-1">
+                            {formData.dataset
+                              ? "Change dataset"
+                              : "Upload dataset file"}
+                          </p>
+                          <p className="text-gray-500 text-sm">
+                            {formData.dataset
+                              ? formData.dataset.name
+                              : "Click or drag file here"}
+                          </p>
+                          {formData.dataset && (
+                            <span className="mt-2 inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                              <svg
+                                className="h-2 w-2 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 8 8"
+                              >
+                                <circle cx="4" cy="4" r="3" />
+                              </svg>
+                              Dataset selected
+                            </span>
+                          )}
+                        </label>
                       </div>
                     </div>
+
+                    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors">
+                      <label className="block font-medium mb-2 text-gray-700 flex items-center">
+                        Dataset Type{" "}
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <select
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white"
+                        value={formData.dataset_type || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            dataset_type: e.target.value,
+                          })
+                        }
+                        required
+                      >
+                        <option value="" disabled>
+                          Select dataset type
+                        </option>
+                        <option value="text">Text</option>
+                        <option value="tabular">Tabular</option>
+                        <option value="categorical">Categorical</option>
+                      </select>
+                      <div className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                          <svg
+                            className="fill-current h-4 w-4"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Select the type that best describes your dataset
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1248,6 +1573,41 @@ const UploadModal = ({
               </div>
             )}
           </div>
+
+          {(stepError || apiError) && (
+            <div className="mt-4">
+              {stepError && (
+                <div className="p-3 bg-red-100 text-red-700 border border-red-200 rounded flex items-center justify-between">
+                  <span>{stepError}</span>
+                  <button
+                    onClick={() => setStepError("")}
+                    className="ml-4 text-red-500 hover:text-red-700 focus:outline-none"
+                    aria-label="Close error message"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              {apiError && (
+                <div className="p-3 bg-red-100 text-red-700 border border-red-200 rounded">
+                  {apiError}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-between mt-8 border-t pt-6">
             <button

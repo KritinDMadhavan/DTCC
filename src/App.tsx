@@ -20,6 +20,7 @@ import ProfilePage from "./pages/ProfilePage";
 import DriftAnalysisPage from "./pages/DriftAnalysisPage";
 import RiskAssessmentPage from "./pages/RiskAssessmentPage";
 import ISO42001AuditPage from "./pages/ISO42001AuditPage";
+import GitHubCallback from "./components/GitHubCallback";
 // Import the correct OverviewPage if it exists elsewhere or remove if not needed
 // import OverviewPage from './pages/OverviewPage';
 
@@ -198,7 +199,7 @@ function App() {
               }
             />
 
-           <Route
+            <Route
               path="/iso"
               element={
                 <ProtectedRoute>
@@ -209,7 +210,7 @@ function App() {
                   </AppLayout>
                 </ProtectedRoute>
               }
-            /> 
+            />
 
             {/* If OverviewPage exists, uncomment and use this route */}
             {/* <Route path="/projects/:id/overview" element={
@@ -221,6 +222,7 @@ function App() {
             } /> */}
 
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/github/callback" element={<GitHubCallback />} />
 
             <Route path="/" element={<SignupPage />} />
             <Route

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   FileText,
@@ -32,6 +32,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import OnboardingModal from "../components/OnboardingModal";
+import { FaGithub } from "react-icons/fa";
 
 interface Project {
   project_id: string;
@@ -100,6 +101,7 @@ interface AuditStats {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const hasExchangedCode = useRef(false); // Prevent double execution
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -130,7 +132,88 @@ const HomePage: React.FC = () => {
   >([]);
   const [auditsLoading, setAuditsLoading] = useState(true);
 
+  const [isGitHubConnected, setIsGitHubConnected] = useState(false);
+  const [repoNames, setRepoNames] = useState<string[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState<string>("");
+
   useEffect(() => {
+    // Check for GitHub access token
+    setIsGitHubConnected(!!localStorage.getItem("accessToken"));
+
+    // If connected, fetch GitHub user data
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+      fetch("http://localhost:8000/getUserData", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + accessToken,
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("GitHub user data:", data);
+        })
+        .catch((error) => {
+          console.error("Error fetching GitHub user data:", error);
+        });
+
+      // Fetch GitHub user repos
+      fetch("http://localhost:8000/getUserRepos", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + accessToken,
+        },
+      })
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          if (Array.isArray(data)) {
+            const names = data.map((repo: any) => repo.full_name);
+            setRepoNames(names);
+            if (names.length > 0) setSelectedRepo(names[0]);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching GitHub user repos:", error);
+        });
+    }
+
+    // --- GITHUB OAUTH CODE EXCHANGE LOGIC ---
+    const storedAuthCode = localStorage.getItem("github_auth_code");
+    if (storedAuthCode && !hasExchangedCode.current) {
+      hasExchangedCode.current = true; // Prevent double execution
+      console.log(
+        "HomePage: Found github_auth_code in localStorage:",
+        storedAuthCode
+      );
+      // Exchange the code for an access token
+      fetch("http://localhost:8000/getAccessToken?code=" + storedAuthCode, {
+        method: "GET",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("GitHub access token response:", data);
+          if (data.access_token) {
+            localStorage.setItem("accessToken", data.access_token);
+            console.log("✅ GitHub access token stored in localStorage");
+            localStorage.removeItem("github_auth_code"); // Remove only after success
+            // Optionally, update state or show a message here
+          } else {
+            console.error("❌ No access_token received from GitHub:", data);
+            alert(
+              "Failed to retrieve GitHub access token. Please try the GitHub import again."
+            );
+            localStorage.removeItem("github_auth_code"); // Remove to allow retry
+          }
+        })
+        .catch((error) => {
+          console.error("❌ Error exchanging GitHub auth code:", error);
+          alert("Failed to complete GitHub authorization. Please try again.");
+          localStorage.removeItem("github_auth_code"); // Remove to allow retry
+        });
+    }
+    // --- END GITHUB OAUTH CODE EXCHANGE LOGIC ---
     fetchProjects();
     checkFirstTimeUserStatus();
   }, []);
@@ -443,6 +526,15 @@ const HomePage: React.FC = () => {
     user
   );
 
+  // Handle GitHub logout
+  const handleGitHubLogout = () => {
+    localStorage.removeItem("accessToken");
+    setIsGitHubConnected(false);
+    setRepoNames([]);
+    setSelectedRepo("");
+    console.log("GitHub logged out successfully");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -485,14 +577,58 @@ const HomePage: React.FC = () => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <h1 className="text-3xl font-medium text-gray-900">
-                  PRISM Dashboard 
+                  PRISM Dashboard DTCC <b>X</b> Hackathon
                 </h1>
               </div>
               <p className="text-gray-600 font-medium">
                 Monitor your AI systems and ensure compliance across all
                 projects
               </p>
-              <div className="flex items-center space-x-4 mt-2"></div>
+              <div className="flex items-center space-x-4 mt-2">
+                {/* GitHub Connection Indicator */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <FaGithub
+                    size={24}
+                    style={{
+                      marginRight: 8,
+                      color: isGitHubConnected ? "#22c55e" : "#9ca3af",
+                    }}
+                  />
+                  <span
+                    style={{
+                      color: isGitHubConnected ? "#22c55e" : "#9ca3af",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {isGitHubConnected
+                      ? "GitHub Connected"
+                      : "GitHub Not Connected"}
+                  </span>
+                  {isGitHubConnected && (
+                    <button
+                      onClick={handleGitHubLogout}
+                      style={{
+                        marginLeft: 16,
+                        padding: "4px 8px",
+                        backgroundColor: "#ef4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      Logout GitHub
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
             <button
               onClick={() => navigate("/projects/new")}

@@ -130,7 +130,7 @@ const useExplainabilityData = (
         const modelId = data[0].model_id;
         const model_version = data[0].model_version;
 
-        const apiUrl = `https://block-convey-p1.uc.r.appspot.com/ml/explainability/${projectId}/${modelId}/${model_version}`;
+        const apiUrl = `http://localhost:8000/ml/explainability/${projectId}/${modelId}/${model_version}`;
 
         const response = await fetch(apiUrl, {
           headers: {
