@@ -49,10 +49,13 @@ const ISO42001AuditPage: React.FC = () => {
       setLoading(true);
 
       // Check if risk assessment was completed (from ReportPage)
-      const riskAssessmentCompleted = localStorage.getItem("riskassessment") === "true";
-      
+      const riskAssessmentCompleted =
+        localStorage.getItem("riskassessment") === "true";
+
       if (riskAssessmentCompleted) {
-        console.log("Risk assessment completed, auto-completing related subsections");
+        console.log(
+          "Risk assessment completed, auto-completing related subsections"
+        );
         // Auto-complete risk assessment related subsections
         setAutoSectionsCompleted(
           new Set([
@@ -3099,7 +3102,7 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
               to="/iso"
               className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gray-50 text-gray-900 font-semibold border border-gray-200"
             >
-              <div className="h-8 w-8 bg-blue-400 rounded-lg flex items-center justify-center">
+              <div className="h-8 w-8 bg-emerald-400 rounded-lg flex items-center justify-center">
                 <Award className="h-4 w-4 text-white" />
               </div>
               <span>ISO 42001 Audit</span>
@@ -3147,8 +3150,8 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Settings className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-emerald-600" />
                   </div>
                   <div className="ml-3">
                     <h3 className="font-semibold text-gray-900">
@@ -3190,11 +3193,18 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
               </div>
               <div className="space-y-2">
                 {(() => {
-                  const docSubsections = ["ai-policy-documentation", "procedures-guidelines", "record-keeping-system"];
-                  const completedDocSubsections = docSubsections.filter(sub => autoSectionsCompleted.has(sub));
-                  const allDocCompleted = completedDocSubsections.length === docSubsections.length;
+                  const docSubsections = [
+                    "ai-policy-documentation",
+                    "procedures-guidelines",
+                    "record-keeping-system",
+                  ];
+                  const completedDocSubsections = docSubsections.filter((sub) =>
+                    autoSectionsCompleted.has(sub)
+                  );
+                  const allDocCompleted =
+                    completedDocSubsections.length === docSubsections.length;
                   const anyDocCompleted = completedDocSubsections.length > 0;
-                  
+
                   return (
                     <div className="flex items-center text-sm">
                       {allDocCompleted ? (
@@ -3208,17 +3218,26 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
                         <AlertCircle className="w-4 h-4 text-yellow-500 mr-2" />
                       )}
                       <span className="text-gray-700">
-                        Documentation and Policy Development {anyDocCompleted && `(${completedDocSubsections.length}/${docSubsections.length})`}
+                        Documentation and Policy Development{" "}
+                        {anyDocCompleted &&
+                          `(${completedDocSubsections.length}/${docSubsections.length})`}
                       </span>
                     </div>
                   );
                 })()}
                 {(() => {
-                  const riskSubsections = ["impact-assessment", "risk-mitigation-strategies", "incident-response"];
-                  const completedRiskSubsections = riskSubsections.filter(sub => autoSectionsCompleted.has(sub));
-                  const allRiskCompleted = completedRiskSubsections.length === riskSubsections.length;
+                  const riskSubsections = [
+                    "impact-assessment",
+                    "risk-mitigation-strategies",
+                    "incident-response",
+                  ];
+                  const completedRiskSubsections = riskSubsections.filter(
+                    (sub) => autoSectionsCompleted.has(sub)
+                  );
+                  const allRiskCompleted =
+                    completedRiskSubsections.length === riskSubsections.length;
                   const anyRiskCompleted = completedRiskSubsections.length > 0;
-                  
+
                   return (
                     <div className="flex items-center text-sm">
                       {allRiskCompleted ? (
@@ -3232,17 +3251,29 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
                         <AlertCircle className="w-4 h-4 text-yellow-500 mr-2" />
                       )}
                       <span className="text-gray-700">
-                        Risk Assessment and Management {anyRiskCompleted && `(${completedRiskSubsections.length}/${riskSubsections.length})`}
+                        Risk Assessment and Management{" "}
+                        {anyRiskCompleted &&
+                          `(${completedRiskSubsections.length}/${riskSubsections.length})`}
                       </span>
                     </div>
                   );
                 })()}
                 {(() => {
-                  const lifecycleSubsections = ["development-controls", "testing-framework", "deployment-procedures"];
-                  const completedLifecycleSubsections = lifecycleSubsections.filter(sub => autoSectionsCompleted.has(sub));
-                  const allLifecycleCompleted = completedLifecycleSubsections.length === lifecycleSubsections.length;
-                  const anyLifecycleCompleted = completedLifecycleSubsections.length > 0;
-                  
+                  const lifecycleSubsections = [
+                    "development-controls",
+                    "testing-framework",
+                    "deployment-procedures",
+                  ];
+                  const completedLifecycleSubsections =
+                    lifecycleSubsections.filter((sub) =>
+                      autoSectionsCompleted.has(sub)
+                    );
+                  const allLifecycleCompleted =
+                    completedLifecycleSubsections.length ===
+                    lifecycleSubsections.length;
+                  const anyLifecycleCompleted =
+                    completedLifecycleSubsections.length > 0;
+
                   return (
                     <div className="flex items-center text-sm">
                       {allLifecycleCompleted ? (
@@ -3256,7 +3287,9 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
                         <AlertCircle className="w-4 h-4 text-yellow-500 mr-2" />
                       )}
                       <span className="text-gray-700">
-                        AI System Lifecycle Management {anyLifecycleCompleted && `(${completedLifecycleSubsections.length}/${lifecycleSubsections.length})`}
+                        AI System Lifecycle Management{" "}
+                        {anyLifecycleCompleted &&
+                          `(${completedLifecycleSubsections.length}/${lifecycleSubsections.length})`}
                       </span>
                     </div>
                   );
@@ -3281,7 +3314,7 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
               {renderCollapsibleSection(
                 1,
                 "Documentation and Policy Development",
-                <FileText className="w-5 h-5 text-blue-600" />,
+                <FileText className="w-5 h-5 text-emerald-600" />,
                 [
                   {
                     id: "ai-policy-documentation",
@@ -3305,7 +3338,7 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
               {renderCollapsibleSection(
                 2,
                 "Risk Assessment and Management",
-                <Shield className="w-5 h-5 text-blue-600" />,
+                <Shield className="w-5 h-5 text-emerald-600" />,
                 [
                   {
                     id: "impact-assessment",
@@ -3329,7 +3362,7 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
               {renderCollapsibleSection(
                 3,
                 "AI System Lifecycle Management",
-                <Zap className="w-5 h-5 text-blue-600" />,
+                <Zap className="w-5 h-5 text-emerald-600" />,
                 [
                   {
                     id: "development-controls",
@@ -3353,7 +3386,7 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
               {renderCollapsibleSection(
                 4,
                 "Performance Monitoring",
-                <Target className="w-5 h-5 text-blue-600" />,
+                <Target className="w-5 h-5 text-emerald-600" />,
                 [
                   {
                     id: "kpi-definition",
@@ -3384,4 +3417,3 @@ Perform COMPREHENSIVE analysis. Read the entire document thoroughly and provide 
 };
 
 export default ISO42001AuditPage;
-

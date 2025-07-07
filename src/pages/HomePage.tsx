@@ -5,28 +5,20 @@ import {
   Clock,
   CheckCircle,
   Plus,
-  HelpCircle,
   Trash2,
   AlertCircle,
   X,
-  Shield,
   Home,
   ChevronRight,
   BarChart3,
-  TrendingUp,
-  Activity,
   XCircle,
-  Settings,
   Filter,
   ArrowUpRight,
   Zap,
-  Target,
-  Calendar,
-  Users,
   Award,
-  Sparkles,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -135,6 +127,9 @@ const HomePage: React.FC = () => {
   const [isGitHubConnected, setIsGitHubConnected] = useState(false);
   const [repoNames, setRepoNames] = useState<string[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<string>("");
+
+  // Sidebar collapse state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // Check for GitHub access token
@@ -535,34 +530,172 @@ const HomePage: React.FC = () => {
     console.log("GitHub logged out successfully");
   };
 
+  // Handle GitHub connection
+  const handleGitHubConnect = () => {
+    // Redirect to GitHub OAuth with the correct callback URL
+    const redirectUri = encodeURIComponent(
+      `${window.location.origin}/github/callback`
+    );
+    const clientId = "Ov23licv8OIoqToCAzBq";
+    const scope = encodeURIComponent("repo read:user");
+
+    window.location.assign(
+      `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`
+    );
+  };
+
+  // Toggle sidebar collapse
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Floating toggle button when sidebar is collapsed */}
+      {isSidebarCollapsed && (
+        <button
+          onClick={toggleSidebar}
+          className="fixed top-1/2 left-2 transform -translate-y-1/2 z-50 p-3 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 border border-gray-200"
+          title="Expand sidebar"
+        >
+          <ChevronRight className="h-5 w-5 text-gray-700" />
+        </button>
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex-shrink-0 shadow-sm">
-        <div className="h-full flex flex-col">
+      <div
+        className={`${
+          isSidebarCollapsed ? "w-0" : "w-64"
+        } bg-white border-r border-gray-200 flex-shrink-0 shadow-sm transition-all duration-300 ease-in-out overflow-hidden`}
+      >
+        <div className="h-full flex flex-col w-64">
+          {/* Header with collapse button */}
+          <div className="flex items-center justify-end p-3 border-b border-gray-200">
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            </button>
+          </div>
+
           {/* Navigation */}
           <nav className="flex-1 p-6 space-y-2">
             <Link
               to="/"
-              className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gray-50 text-gray-900 font-semibold border border-gray-200"
+              className={`flex items-center ${
+                isSidebarCollapsed ? "justify-center px-2" : "space-x-3 px-4"
+              } py-3 rounded-xl bg-gray-50 text-gray-900 font-semibold border border-gray-200 transition-all duration-200 group relative`}
+              title={isSidebarCollapsed ? "Dashboard" : undefined}
             >
               <div className="h-8 w-8 bg-emerald-400 rounded-lg flex items-center justify-center">
                 <Home className="h-4 w-4 text-white" />
               </div>
-              <span>Dashboard</span>
+              {!isSidebarCollapsed && <span>Dashboard</span>}
+              {/* Tooltip for collapsed state */}
+              {isSidebarCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  Dashboard
+                </div>
+              )}
             </Link>
 
             <Link
               to="/iso"
-              className="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium transition-colors"
+              className={`flex items-center ${
+                isSidebarCollapsed ? "justify-center px-2" : "space-x-3 px-4"
+              } py-3 rounded-xl text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium transition-all duration-200 group relative`}
+              title={isSidebarCollapsed ? "ISO 42001 Audit" : undefined}
             >
-              <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Award className="h-4 w-4 text-blue-600" />
+              <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <Award className="h-4 w-4 text-emerald-600" />
               </div>
-              <span>ISO 42001 Audit</span>
+              {!isSidebarCollapsed && <span>ISO 42001 Audit</span>}
+              {/* Tooltip for collapsed state */}
+              {isSidebarCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  ISO 42001 Audit
+                </div>
+              )}
             </Link>
 
-            {/* Quick Stats in Sidebar */}
+            {/* GitHub Integration Section */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              {!isSidebarCollapsed && (
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  Integrations
+                </h3>
+              )}
+
+              <div
+                className={`${
+                  isSidebarCollapsed ? "px-2" : "px-4"
+                } py-4 bg-gray-50 rounded-xl border border-gray-200 group relative`}
+              >
+                <div
+                  className={`flex items-center ${
+                    isSidebarCollapsed ? "justify-center" : "space-x-3"
+                  } ${isSidebarCollapsed ? "" : "mb-3"}`}
+                >
+                  <div
+                    className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+                      isGitHubConnected ? "bg-green-100" : "bg-gray-100"
+                    }`}
+                  >
+                    <FaGithub
+                      className={`h-4 w-4 ${
+                        isGitHubConnected ? "text-green-600" : "text-gray-400"
+                      }`}
+                    />
+                  </div>
+                  {!isSidebarCollapsed && (
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-gray-900">
+                        GitHub
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        {isGitHubConnected ? "Connected" : "Not connected"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tooltip for collapsed state */}
+                {isSidebarCollapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    GitHub {isGitHubConnected ? "Connected" : "Not Connected"}
+                  </div>
+                )}
+
+                {!isSidebarCollapsed && (
+                  <>
+                    {isGitHubConnected ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2 text-xs text-green-600">
+                          <CheckCircle className="h-3 w-3" />
+                          <span>Ready to import models</span>
+                        </div>
+                        <button
+                          onClick={handleGitHubLogout}
+                          className="w-full text-xs px-3 py-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleGitHubConnect}
+                        className="w-full text-xs px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center space-x-1"
+                      >
+                        <span>Connect GitHub</span>
+                        <ArrowUpRight className="h-3 w-3" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
           </nav>
 
           {/* User Section */}
@@ -585,48 +718,16 @@ const HomePage: React.FC = () => {
                 projects
               </p>
               <div className="flex items-center space-x-4 mt-2">
-                {/* GitHub Connection Indicator */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <FaGithub
-                    size={24}
-                    style={{
-                      marginRight: 8,
-                      color: isGitHubConnected ? "#22c55e" : "#9ca3af",
-                    }}
-                  />
-                  <span
-                    style={{
-                      color: isGitHubConnected ? "#22c55e" : "#9ca3af",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {isGitHubConnected
-                      ? "GitHub Connected"
-                      : "GitHub Not Connected"}
+                {/* Simplified GitHub indicator */}
+                <div className="flex items-center space-x-2">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      isGitHubConnected ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  ></div>
+                  <span className="text-sm text-gray-600">
+                    GitHub {isGitHubConnected ? "Connected" : "Not Connected"}
                   </span>
-                  {isGitHubConnected && (
-                    <button
-                      onClick={handleGitHubLogout}
-                      style={{
-                        marginLeft: 16,
-                        padding: "4px 8px",
-                        backgroundColor: "#ef4444",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                        fontSize: 12,
-                      }}
-                    >
-                      Logout GitHub
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -692,8 +793,8 @@ const HomePage: React.FC = () => {
                     {auditsLoading ? "—" : auditStats.total_reports || 0}
                   </p>
                 </div>
-                <div className="h-12 w-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-purple-600" />
+                <div className="h-12 w-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-emerald-600" />
                 </div>
               </div>
             </div>
@@ -1009,7 +1110,7 @@ const HomePage: React.FC = () => {
                                         : projectSummary.reports_generated === 2
                                         ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                                         : projectSummary.pending_reports > 0
-                                        ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                                         : projectSummary.total_audits > 0
                                         ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                                         : "bg-gray-100 text-gray-600 border border-gray-200"

@@ -248,7 +248,7 @@ const ReportPage: React.FC = () => {
     // Check if risk assessment was generated for this project AND has PDF data
     const wasGenerated = localStorage.getItem(`riskAssessmentGenerated_${id}`);
     const timestamp = localStorage.getItem(`riskAssessmentTimestamp_${id}`);
-    
+
     // Also check if there's actually PDF data available
     let hasPdfData = false;
     try {
@@ -260,7 +260,7 @@ const ReportPage: React.FC = () => {
     } catch (error) {
       console.error("Error checking PDF data:", error);
     }
-    
+
     // Only show AI Risk Assessment card if generated AND has PDF data
     setHasRiskAssessment(wasGenerated === "true" && hasPdfData);
     setRiskAssessmentTimestamp(timestamp);
@@ -309,13 +309,13 @@ const ReportPage: React.FC = () => {
         hasPdfData: !!analysisData.pdfData,
         keys: Object.keys(analysisData),
         pdfDataType: typeof analysisData.pdfData,
-        pdfDataLength: analysisData.pdfData ? analysisData.pdfData.length : 0
+        pdfDataLength: analysisData.pdfData ? analysisData.pdfData.length : 0,
       });
 
       // Check if PDF data exists in the stored analysis
       if (analysisData.pdfData) {
         console.log("Found stored PDF data, downloading...");
-        
+
         // Convert base64 to blob and download
         const pdfBase64 = analysisData.pdfData;
         const byteCharacters = atob(pdfBase64);
@@ -366,7 +366,7 @@ const ReportPage: React.FC = () => {
           status: ReportGenerationStatus.ERROR,
           message: "No PDF report found. Please generate the report first.",
         });
-        
+
         // Show more helpful message
         setTimeout(() => {
           alert(
@@ -644,7 +644,7 @@ const ReportPage: React.FC = () => {
                   </span>
                 )}
                 {projectDetails?.project_type && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                     {projectDetails.project_type}
                   </span>
                 )}
@@ -1140,7 +1140,7 @@ const ReportPage: React.FC = () => {
                         ? "w-1/2 bg-teal-500 animate-pulse"
                         : reportGeneration.status ===
                           ReportGenerationStatus.DOWNLOADING
-                        ? "w-3/4 bg-blue-500 animate-pulse"
+                        ? "w-3/4 bg-emerald-500 animate-pulse"
                         : reportGeneration.status ===
                           ReportGenerationStatus.ERROR
                         ? "w-full bg-red-500"
@@ -1194,7 +1194,7 @@ const ReportPage: React.FC = () => {
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center">
                         <svg
-                          className="w-10 h-10 text-blue-600"
+                          className="w-10 h-10 text-emerald-600"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
@@ -1212,15 +1212,15 @@ const ReportPage: React.FC = () => {
                       {/* Animated dots to show download progress */}
                       <div className="absolute -bottom-1 left-0 right-0 flex justify-center space-x-1">
                         <div
-                          className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                          className="w-2 h-2 bg-emerald-600 rounded-full animate-bounce"
                           style={{ animationDelay: "0s" }}
                         ></div>
                         <div
-                          className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                          className="w-2 h-2 bg-emerald-600 rounded-full animate-bounce"
                           style={{ animationDelay: "0.2s" }}
                         ></div>
                         <div
-                          className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                          className="w-2 h-2 bg-emerald-600 rounded-full animate-bounce"
                           style={{ animationDelay: "0.4s" }}
                         ></div>
                       </div>

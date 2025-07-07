@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { FaGithub } from "react-icons/fa";
+import { CheckCircle } from "lucide-react";
 
 // Initialize supabase client
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || "";
@@ -27,7 +29,7 @@ const UploadModal = ({
     name: "",
     model_type: "",
     version: "1.0.0",
-    file: null as File | null,
+    file: null as File | string | null,
     description: "",
     dataset: null as File | null,
     dataset_type: "",
@@ -47,8 +49,8 @@ const UploadModal = ({
   }, [projectId]);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState(null);
-  const [reportData, setReportData] = useState(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<any>(null);
 
   const [showAnalysisAnimation, setShowAnalysisAnimation] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -67,11 +69,6 @@ const UploadModal = ({
   const [processMessage, setProcessMessage] = useState("");
   const [processingComplete, setProcessingComplete] = useState(false);
 
-  // Move these state declarations up here - they were defined AFTER the return statement
-  const [availableProjects, setAvailableProjects] = useState([]);
-  const [selectedProjectName, setSelectedProjectName] = useState("");
-  const [isGitHubImportMode, setIsGitHubImportMode] = useState(false);
-  const [githubAuthCode, setGithubAuthCode] = useState<string | null>(null);
   // GitHub repo navigation state
   const [repoNames, setRepoNames] = useState<string[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<string>("");
@@ -173,7 +170,7 @@ const UploadModal = ({
   // const baseUrl = window.env?.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
   // Send a signal to parent component to show animation on the page
-  const emitProcessingSignal = (status, data = {}) => {
+  const emitProcessingSignal = (status: string, data = {}) => {
     const event = new CustomEvent("modelProcessingStatus", {
       detail: {
         status, // 'start', 'success', 'error'
@@ -187,7 +184,7 @@ const UploadModal = ({
   };
 
   // Add this function to fetch project ID by name
-  const getProjectIdByName = async (projectName) => {
+  const getProjectIdByName = async (projectName: string) => {
     try {
       const { data, error } = await supabase
         .from("projects")
@@ -197,31 +194,10 @@ const UploadModal = ({
 
       if (error) throw error;
 
-      return;
+      return data?.project_id;
     } catch (err) {
       console.error("Error fetching project ID:", err);
       return null;
-    }
-  };
-
-  // Add this function to fetch all available projects
-  const fetchAvailableProjects = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("projects")
-        .select("project_id, project_name")
-        .order("project_name");
-
-      if (error) throw error;
-
-      setAvailableProjects(data || []);
-
-      // If we have projects and no projectId, use the first one
-      if (data && data.length > 0 && !projectId) {
-        getProjectIdByName(data[0].project_name);
-      }
-    } catch (err) {
-      console.error("Error fetching projects:", err);
     }
   };
 
@@ -235,11 +211,7 @@ const UploadModal = ({
         projectId: projectId,
       }));
     }
-    // Otherwise fetch available projects
-    else {
-      fetchAvailableProjects();
-    }
-  }, []); // Empty dependency array means this runs once on mount
+  }, [projectId]); // Depend on projectId prop
 
   // Now you can use p_id throughout your component
   // For example, replace instances of projectId with p_id in your API calls
@@ -625,8 +597,11 @@ const UploadModal = ({
   };
 
   // Handle file uploads
-  const handleFileUpload = (e, fileType) => {
-    const file = e.target.files[0];
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fileType: string
+  ) => {
+    const file = e.target.files?.[0];
     if (file) {
       setFormData({
         ...formData,
@@ -811,21 +786,6 @@ const UploadModal = ({
 
   if (!isVisible) return null;
 
-  // Add a handler for project selection
-  const handleProjectSelect = async (projectName) => {
-    setSelectedProjectName(projectName);
-
-    if (projectName) {
-      const projectId = await getProjectIdByName(projectName);
-      if (projectId) {
-        setFormData((prev) => ({
-          ...prev,
-          projectId: projectId,
-        }));
-      }
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50">
       {/* Analysis animation overlay - shown during processing */}
@@ -904,7 +864,17 @@ const UploadModal = ({
       <div className="bg-white rounded-xl shadow-2xl w-[900px] max-h-[90vh] overflow-y-auto border border-gray-100">
         {/* Modal Header */}
         <div className="flex justify-between items-center p-6 border-b bg-gradient-to-r from-blue-50 to-white">
-          <h4 className="text-xl font-semibold text-gray-800">{modalTitle}</h4>
+          <div>
+            <h4 className="text-xl font-semibold text-gray-800">
+              {modalTitle}
+            </h4>
+            {isGitHubConnected && (
+              <p className="text-sm text-green-600 mt-1 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-1" />
+                GitHub connected - you can import models from your repositories
+              </p>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-colors"
@@ -1081,33 +1051,23 @@ const UploadModal = ({
             </div>
           )}
 
-          {/* GitHub Connect Button - Only show if not connected */}
+          {/* Show message if GitHub not connected */}
           {!isGitHubConnected && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h5 className="text-lg font-medium mb-4 text-gray-800 flex items-center">
-                <span className="bg-blue-600 text-white w-7 h-7 rounded-full inline-flex items-center justify-center mr-2 text-sm">
-                  ⚙️
-                </span>
-                Connect to GitHub
-              </h5>
-              <p className="text-gray-600 mb-4">
-                Connect your GitHub account to import models from your
-                repositories.
-              </p>
-              <button
-                onClick={handleGitHubImport}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                </svg>
-                Connect GitHub Account
-              </button>
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <FaGithub className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-3">
+                  <h5 className="text-sm font-medium text-blue-800">
+                    GitHub Integration Available
+                  </h5>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Connect GitHub from the sidebar to import models directly
+                    from your repositories.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1295,7 +1255,9 @@ const UploadModal = ({
                       </p>
                       <p className="text-gray-500 text-sm">
                         {formData.file
-                          ? formData.file.name
+                          ? typeof formData.file === "string"
+                            ? formData.file.split("/").pop()
+                            : formData.file.name
                           : "Click to upload file here"}
                       </p>
                       {isGitHubConnected && (
@@ -1497,7 +1459,11 @@ const UploadModal = ({
                         File
                       </p>
                       <p className="text-gray-800 font-medium truncate">
-                        {formData.file ? formData.file.name : "Not provided"}
+                        {formData.file
+                          ? typeof formData.file === "string"
+                            ? formData.file.split("/").pop()
+                            : formData.file.name
+                          : "Not provided"}
                       </p>
                     </div>
                   </div>

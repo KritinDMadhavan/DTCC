@@ -163,28 +163,31 @@ const useExplainabilityData = (
 // Adapted data processing functions for API response
 const processFeatureImportance = (data: ExplainabilityApiResponse | null) => {
   console.log("processFeatureImportance called with:", data);
-  
+
   if (!data) {
     console.log("No data provided to processFeatureImportance");
     return [];
   }
 
   // Handle both direct and metrics-wrapped data structures
-  const featureData = data.feature_importance || 
-                     (data as any).metrics?.feature_importance ||
-                     data.shap_importance || 
-                     (data as any).metrics?.shap_importance;
+  const featureData =
+    data.feature_importance ||
+    (data as any).metrics?.feature_importance ||
+    data.shap_importance ||
+    (data as any).metrics?.shap_importance;
   console.log("Feature data:", featureData);
   console.log("Full data structure:", JSON.stringify(data, null, 2));
-  
+
   // Add safety check for featureData
   if (!featureData || !featureData.importances || !featureData.feature_names) {
-    console.log("Missing feature data structure:", { 
-      hasFeatureData: !!featureData, 
-      hasImportances: !!featureData?.importances, 
+    console.log("Missing feature data structure:", {
+      hasFeatureData: !!featureData,
+      hasImportances: !!featureData?.importances,
       hasFeatureNames: !!featureData?.feature_names,
       hasMetrics: !!(data as any).metrics,
-      metricsKeys: (data as any).metrics ? Object.keys((data as any).metrics) : []
+      metricsKeys: (data as any).metrics
+        ? Object.keys((data as any).metrics)
+        : [],
     });
     return [];
   }
@@ -206,7 +209,9 @@ const processFeatureImportance = (data: ExplainabilityApiResponse | null) => {
     };
   });
 
-  const result = meanImportances.sort((a: any, b: any) => b.importance - a.importance);
+  const result = meanImportances.sort(
+    (a: any, b: any) => b.importance - a.importance
+  );
   console.log("processFeatureImportance result:", result);
   return result;
 };
@@ -216,14 +221,15 @@ const processShapDependence = (data: ExplainabilityApiResponse | null) => {
 
   // Handle both direct and metrics-wrapped data structures
   const shap_values = data.shap_values || (data as any).metrics?.shap_values;
-  const shapImportance = data.shap_importance || (data as any).metrics?.shap_importance;
-  
+  const shapImportance =
+    data.shap_importance || (data as any).metrics?.shap_importance;
+
   if (!shap_values || !shapImportance || !shapImportance.feature_names) {
     console.log("Missing SHAP data:", {
       hasShapValues: !!shap_values,
       hasShapImportance: !!shapImportance,
       hasFeatureNames: !!shapImportance?.feature_names,
-      hasMetrics: !!(data as any).metrics
+      hasMetrics: !!(data as any).metrics,
     });
     return [];
   }
@@ -276,14 +282,19 @@ const processShapFeatureImportance = (
   if (!data) return [];
 
   // Handle both direct and metrics-wrapped data structures
-  const shapImportance = data.shap_importance || (data as any).metrics?.shap_importance;
-  
-  if (!shapImportance || !shapImportance.importances || !shapImportance.feature_names) {
+  const shapImportance =
+    data.shap_importance || (data as any).metrics?.shap_importance;
+
+  if (
+    !shapImportance ||
+    !shapImportance.importances ||
+    !shapImportance.feature_names
+  ) {
     console.log("Missing SHAP Feature Importance data:", {
       hasShapImportance: !!shapImportance,
       hasImportances: !!shapImportance?.importances,
       hasFeatureNames: !!shapImportance?.feature_names,
-      hasMetrics: !!(data as any).metrics
+      hasMetrics: !!(data as any).metrics,
     });
     return [];
   }
@@ -399,7 +410,7 @@ const MetricCard = ({
           status === "Excellent"
             ? "bg-green-100 text-green-800"
             : status === "Good"
-            ? "bg-blue-100 text-blue-800"
+            ? "bg-emerald-100 text-emerald-800"
             : "bg-yellow-100 text-yellow-800"
         }`}
       >
@@ -427,7 +438,7 @@ const FeatureImportanceChart = ({ data }: { data: any[] }) => (
         />
         <XAxis
           type="number"
-          domain={[0, 'dataMax']}
+          domain={[0, "dataMax"]}
           tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
         />
         <YAxis
@@ -458,7 +469,7 @@ const FeatureImportanceChart = ({ data }: { data: any[] }) => (
             dataKey="importance"
             position="right"
             formatter={(value: number) => `${(value * 100).toFixed(0)}%`}
-            style={{ fontSize: '11px' }}
+            style={{ fontSize: "11px" }}
           />
         </Bar>
       </BarChart>
@@ -491,7 +502,12 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
               type="number"
               dataKey="featureValue"
               name={feature1}
-              label={{ value: "Value", position: "insideBottom", offset: -5, fontSize: 11 }}
+              label={{
+                value: "Value",
+                position: "insideBottom",
+                offset: -5,
+                fontSize: 11,
+              }}
               tick={{ fontSize: 10 }}
             />
             <YAxis
@@ -503,7 +519,7 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
                 angle: -90,
                 position: "insideLeft",
                 fontSize: 11,
-                offset: 5
+                offset: 5,
               }}
               tick={{ fontSize: 10 }}
             />
@@ -514,7 +530,7 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
                 borderRadius: "8px",
                 boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
                 border: "1px solid #E5E7EB",
-                fontSize: "11px"
+                fontSize: "11px",
               }}
             />
             <Scatter
@@ -537,7 +553,12 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
               type="number"
               dataKey="featureValue"
               name={feature2}
-              label={{ value: "Value", position: "insideBottom", offset: -5, fontSize: 11 }}
+              label={{
+                value: "Value",
+                position: "insideBottom",
+                offset: -5,
+                fontSize: 11,
+              }}
               tick={{ fontSize: 10 }}
             />
             <YAxis
@@ -549,7 +570,7 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
                 angle: -90,
                 position: "insideLeft",
                 fontSize: 11,
-                offset: 5
+                offset: 5,
               }}
               tick={{ fontSize: 10 }}
             />
@@ -560,7 +581,7 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
                 borderRadius: "8px",
                 boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
                 border: "1px solid #E5E7EB",
-                fontSize: "11px"
+                fontSize: "11px",
               }}
             />
             <Scatter
@@ -583,7 +604,12 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
               type="number"
               dataKey="featureValue"
               name={feature3}
-              label={{ value: "Value", position: "insideBottom", offset: -5, fontSize: 11 }}
+              label={{
+                value: "Value",
+                position: "insideBottom",
+                offset: -5,
+                fontSize: 11,
+              }}
               tick={{ fontSize: 10 }}
             />
             <YAxis
@@ -595,7 +621,7 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
                 angle: -90,
                 position: "insideLeft",
                 fontSize: 11,
-                offset: 5
+                offset: 5,
               }}
               tick={{ fontSize: 10 }}
             />
@@ -606,7 +632,7 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
                 borderRadius: "8px",
                 boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
                 border: "1px solid #E5E7EB",
-                fontSize: "11px"
+                fontSize: "11px",
               }}
             />
             <Scatter
@@ -622,13 +648,19 @@ const ShapDependencePlot = ({ data }: { data: any[] }) => {
 };
 
 // Suggestion Card Component
-const SuggestionCard = ({ data }: { data: ExplainabilityApiResponse | null }) => {
-  const explainability_summary = data?.explainability_summary || (data as any)?.metrics?.explainability_summary;
-  
+const SuggestionCard = ({
+  data,
+}: {
+  data: ExplainabilityApiResponse | null;
+}) => {
+  const explainability_summary =
+    data?.explainability_summary ||
+    (data as any)?.metrics?.explainability_summary;
+
   if (!explainability_summary) return null;
   const score = explainability_summary.overall_explainability_score;
   const status = explainability_summary.explainability_status;
-  
+
   const getScoreColor = (score: number) => {
     if (score >= 0.8) return "text-green-600 bg-green-100";
     if (score >= 0.6) return "text-yellow-600 bg-yellow-100";
@@ -637,11 +669,16 @@ const SuggestionCard = ({ data }: { data: ExplainabilityApiResponse | null }) =>
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'excellent': return "bg-green-100 text-green-800";
-      case 'good': return "bg-blue-100 text-blue-800";
-      case 'moderate': return "bg-yellow-100 text-yellow-800";
-      case 'poor': return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "excellent":
+        return "bg-green-100 text-green-800";
+      case "good":
+        return "bg-blue-100 text-blue-800";
+      case "moderate":
+        return "bg-yellow-100 text-yellow-800";
+      case "poor":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -652,12 +689,22 @@ const SuggestionCard = ({ data }: { data: ExplainabilityApiResponse | null }) =>
       className="bg-white rounded-xl p-6 shadow-md border border-gray-100"
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Explainability Analysis Summary</h2>
+        <h2 className="text-xl font-semibold text-gray-900">
+          Explainability Analysis Summary
+        </h2>
         <div className="flex items-center space-x-3">
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status)}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+              status
+            )}`}
+          >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </span>
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(score)}`}>
+          <div
+            className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(
+              score
+            )}`}
+          >
             {Math.round(score * 100)}%
           </div>
         </div>
@@ -666,34 +713,44 @@ const SuggestionCard = ({ data }: { data: ExplainabilityApiResponse | null }) =>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Key Insights */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-3">Key Insights</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">
+            Key Insights
+          </h3>
           <div className="space-y-2">
-            {explainability_summary.key_insights.map((insight: string, idx: number) => (
-              <div key={idx} className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                <p className="text-sm text-gray-700">{insight}</p>
-              </div>
-            ))}
+            {explainability_summary.key_insights.map(
+              (insight: string, idx: number) => (
+                <div key={idx} className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-sm text-gray-700">{insight}</p>
+                </div>
+              )
+            )}
           </div>
         </div>
 
         {/* Recommendations */}
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-3">Recommendations</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">
+            Recommendations
+          </h3>
           <div className="space-y-2">
-            {explainability_summary.recommendations.map((recommendation: string, idx: number) => (
-              <div key={idx} className="flex items-start space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                <p className="text-sm text-gray-700">{recommendation}</p>
-              </div>
-            ))}
+            {explainability_summary.recommendations.map(
+              (recommendation: string, idx: number) => (
+                <div key={idx} className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-sm text-gray-700">{recommendation}</p>
+                </div>
+              )
+            )}
           </div>
         </div>
       </div>
 
       {/* Risk Assessment */}
       <div className="mt-6 pt-4 border-t border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-3">Explainability Assessment</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-3">
+          Explainability Assessment
+        </h3>
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <p className="text-sm text-gray-600">Explanation Reliability</p>
@@ -736,7 +793,7 @@ const ShapFeatureImportanceChart = ({ data }: { data: any[] }) => (
         />
         <XAxis
           type="number"
-          domain={[0, 'dataMax']}
+          domain={[0, "dataMax"]}
           tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
         />
         <YAxis
@@ -767,7 +824,7 @@ const ShapFeatureImportanceChart = ({ data }: { data: any[] }) => (
             dataKey="mean"
             position="right"
             formatter={(value: number) => `${(value * 100).toFixed(0)}%`}
-            style={{ fontSize: '11px' }}
+            style={{ fontSize: "11px" }}
           />
         </Bar>
       </BarChart>
@@ -784,8 +841,8 @@ const ExplainabilityPage: React.FC = () => {
 
   // Skip API call for dummy projects
   const { data, loading, error } = useExplainabilityData(
-    isDummyProject ? "" : (id || ""),
-    isDummyProject ? "" : (effectiveModelId || "")
+    isDummyProject ? "" : id || "",
+    isDummyProject ? "" : effectiveModelId || ""
   );
 
   // Always use demo data for dummy projects, otherwise fallback to demo data if API fails
@@ -814,7 +871,7 @@ const ExplainabilityPage: React.FC = () => {
     featureImportanceDataLength: featureImportanceData?.length,
     shapDependenceDataLength: shapDependenceData?.length,
     shapFeatureImportanceDataLength: shapFeatureImportanceData?.length,
-    rawData: data
+    rawData: data,
   });
 
   const breadcrumbSegments = [
@@ -855,9 +912,9 @@ const ExplainabilityPage: React.FC = () => {
           {/* Premium Empty State */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
             <div className="p-8 text-center">
-              <div className="mx-auto w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
+              <div className="mx-auto w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
                 <svg
-                  className="h-10 w-10 text-indigo-600"
+                  className="h-10 w-10 text-emerald-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -989,9 +1046,9 @@ const ExplainabilityPage: React.FC = () => {
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center mb-4">
-                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
                   <svg
-                    className="h-5 w-5 text-indigo-600"
+                    className="h-5 w-5 text-emerald-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -1141,7 +1198,6 @@ const ExplainabilityPage: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="p-8 space-y-8 bg-gray-50 min-h-screen"
     >
-      
       <div>
         <div className="flex items-center justify-between">
           <div>
@@ -1150,26 +1206,33 @@ const ExplainabilityPage: React.FC = () => {
             </h1>
             <p className="text-gray-500 mt-1">
               {data
-                ? `Model: ${data.model_name || 'Unknown'} (v${data.model_version || '1.0.0'})`
+                ? `Model: ${data.model_name || "Unknown"} (v${
+                    data.model_version || "1.0.0"
+                  })`
                 : isDummyProject
                 ? "Demo Explainability Analysis"
                 : "Understanding model decisions and feature importance"}
             </p>
           </div>
-          {(data?.explainability_summary || (data as any)?.metrics?.explainability_summary) && (
+          {(data?.explainability_summary ||
+            (data as any)?.metrics?.explainability_summary) && (
             <div className="text-right">
-              <p className="text-sm text-gray-600">Overall Explainability Score</p>
+              <p className="text-sm text-gray-600">
+                Overall Explainability Score
+              </p>
               <p className="text-2xl font-bold text-gray-900">
-                {Math.round((data?.explainability_summary || (data as any)?.metrics?.explainability_summary)?.overall_explainability_score * 100)}%
+                {Math.round(
+                  (
+                    data?.explainability_summary ||
+                    (data as any)?.metrics?.explainability_summary
+                  )?.overall_explainability_score * 100
+                )}
+                %
               </p>
             </div>
           )}
         </div>
-        {error && (
-          <p className="mt-2 text-sm text-red-500">
-          
-          </p>
-        )}
+        {error && <p className="mt-2 text-sm text-red-500"></p>}
       </div>
 
       {/* Suggestion Card */}
@@ -1258,42 +1321,69 @@ const ExplainabilityPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data && (data.lime_explanations || (data as any).metrics?.lime_explanations) ? (
-            Object.entries(data.lime_explanations || (data as any).metrics?.lime_explanations || {}).slice(0, 4).map(([instanceKey, instance]) => (
-              <div key={instanceKey} className="bg-gray-50 p-4 rounded-lg h-[220px]">
-                <h3 className="text-md font-medium mb-2">{instanceKey.replace('_', ' ')}</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Prediction: {(instance.prediction * 100).toFixed(1)}%
-                </p>
-                <div className="space-y-3">
-                  {instance.feature_importance.slice(0, 3).map(([feature, importance], idx) => {
-                    const isPositive = importance > 0;
-                    const absImportance = Math.abs(importance);
-                    const maxWidth = 60; // Maximum width in pixels
-                    const barWidth = Math.max(10, absImportance * maxWidth * 10); // Scale for visibility
-                    
-                    return (
-                      <div key={idx} className="flex justify-between items-center">
-                        <span className="text-sm truncate flex-1 mr-2">{feature}</span>
-                        <div className="flex items-center">
+          {data &&
+          (data.lime_explanations ||
+            (data as any).metrics?.lime_explanations) ? (
+            Object.entries(
+              data.lime_explanations ||
+                (data as any).metrics?.lime_explanations ||
+                {}
+            )
+              .slice(0, 4)
+              .map(([instanceKey, instance]) => (
+                <div
+                  key={instanceKey}
+                  className="bg-gray-50 p-4 rounded-lg h-[220px]"
+                >
+                  <h3 className="text-md font-medium mb-2">
+                    {instanceKey.replace("_", " ")}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Prediction: {(instance.prediction * 100).toFixed(1)}%
+                  </p>
+                  <div className="space-y-3">
+                    {instance.feature_importance
+                      .slice(0, 3)
+                      .map(([feature, importance], idx) => {
+                        const isPositive = importance > 0;
+                        const absImportance = Math.abs(importance);
+                        const maxWidth = 60; // Maximum width in pixels
+                        const barWidth = Math.max(
+                          10,
+                          absImportance * maxWidth * 10
+                        ); // Scale for visibility
+
+                        return (
                           <div
-                            className={`h-2 rounded-full ${
-                              isPositive ? "bg-green-500" : "bg-red-500"
-                            }`}
-                            style={{ width: `${Math.min(barWidth, maxWidth)}px` }}
-                          ></div>
-                          <span className={`text-xs ml-2 ${
-                            isPositive ? "text-green-500" : "text-red-500"
-                          }`}>
-                            {importance.toFixed(3)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                            key={idx}
+                            className="flex justify-between items-center"
+                          >
+                            <span className="text-sm truncate flex-1 mr-2">
+                              {feature}
+                            </span>
+                            <div className="flex items-center">
+                              <div
+                                className={`h-2 rounded-full ${
+                                  isPositive ? "bg-green-500" : "bg-red-500"
+                                }`}
+                                style={{
+                                  width: `${Math.min(barWidth, maxWidth)}px`,
+                                }}
+                              ></div>
+                              <span
+                                className={`text-xs ml-2 ${
+                                  isPositive ? "text-green-500" : "text-red-500"
+                                }`}
+                              >
+                                {importance.toFixed(3)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))
           ) : (
             // Fallback display for dummy projects or when no LIME data is available
             <>
@@ -1304,21 +1394,32 @@ const ExplainabilityPage: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm">age &lt;= -0.84</span>
                     <div className="flex items-center">
-                      <div className="h-2 bg-red-500 rounded-full" style={{ width: "30px" }}></div>
+                      <div
+                        className="h-2 bg-red-500 rounded-full"
+                        style={{ width: "30px" }}
+                      ></div>
                       <span className="text-xs ml-2 text-red-500">-0.01</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">-1.00 &lt; purchased &lt;= 1.00</span>
+                    <span className="text-sm">
+                      -1.00 &lt; purchased &lt;= 1.00
+                    </span>
                     <div className="flex items-center">
-                      <div className="h-2 bg-red-500 rounded-full" style={{ width: "15px" }}></div>
+                      <div
+                        className="h-2 bg-red-500 rounded-full"
+                        style={{ width: "15px" }}
+                      ></div>
                       <span className="text-xs ml-2 text-red-500">-0.00</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">income &lt;= -0.78</span>
                     <div className="flex items-center">
-                      <div className="h-2 bg-red-500 rounded-full" style={{ width: "10px" }}></div>
+                      <div
+                        className="h-2 bg-red-500 rounded-full"
+                        style={{ width: "10px" }}
+                      ></div>
                       <span className="text-xs ml-2 text-red-500">-0.00</span>
                     </div>
                   </div>
@@ -1332,21 +1433,30 @@ const ExplainabilityPage: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm">age &lt;= -0.84</span>
                     <div className="flex items-center">
-                      <div className="h-2 bg-red-500 rounded-full" style={{ width: "30px" }}></div>
+                      <div
+                        className="h-2 bg-red-500 rounded-full"
+                        style={{ width: "30px" }}
+                      ></div>
                       <span className="text-xs ml-2 text-red-500">-0.01</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">purchased &lt;= -1.00</span>
                     <div className="flex items-center">
-                      <div className="h-2 bg-green-500 rounded-full" style={{ width: "15px" }}></div>
+                      <div
+                        className="h-2 bg-green-500 rounded-full"
+                        style={{ width: "15px" }}
+                      ></div>
                       <span className="text-xs ml-2 text-green-500">0.00</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">0.13 &lt; income &lt;= 0.87</span>
                     <div className="flex items-center">
-                      <div className="h-2 bg-green-500 rounded-full" style={{ width: "10px" }}></div>
+                      <div
+                        className="h-2 bg-green-500 rounded-full"
+                        style={{ width: "10px" }}
+                      ></div>
                       <span className="text-xs ml-2 text-green-500">0.00</span>
                     </div>
                   </div>

@@ -327,7 +327,7 @@ const FairnessPage: React.FC = () => {
                         (feature: string, index: number) => (
                           <span
                             key={index}
-                            className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                            className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium"
                           >
                             {feature}
                           </span>
