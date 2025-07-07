@@ -267,7 +267,7 @@ ${Object.entries(assessmentData).filter(([key, value]) => value).map(([key, valu
     deploymentRequirements: { section: "AI System Information", question: "What are your deployment requirements?" },
     
     // Section 2: Human and Stakeholder Involvement  
-    rolesDocumented: { section: "Human and Stakeholder Involvement", question: "Are roles and responsibilities for AI governance clearly documented?" },
+    rolesDocumented: { section: "Human and Stakeholder Involvement", question: "Have the roles and responsibilities of personnel involved in the design, development, deployment, assessment, and monitoring of the AI system been defined and documented?" },
     personnelTrained: { section: "Human and Stakeholder Involvement", question: "Is personnel trained on AI ethics, bias, and risk management?" },
     humanInvolvement: { section: "Human and Stakeholder Involvement", question: "What level of human involvement exists in AI decision-making?" },
     biasTraining: { section: "Human and Stakeholder Involvement", question: "Has bias awareness and mitigation training been provided?" },
@@ -665,25 +665,25 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           questions: [
             {
               field: 'aiSystemDescription',
-              question: 'What is your AI system description?',
+              question: 'Describe the AI system',
               elaboration: 'This provides the foundational understanding of the AI system being assessed.',
               importance: 'Clear system description enables proper risk categorization and compliance planning.'
             },
             {
               field: 'aiSystemPurpose',
-              question: 'What is the purpose of your AI system?',
+              question: 'What is the purpose of developing the AI system?',
               elaboration: 'Understanding the intended use case and business objective of the AI system.',
               importance: 'Purpose determines risk levels, regulatory requirements, and stakeholder impact scope.'
             },
             {
               field: 'deploymentMethod',
-              question: 'What is your deployment method?',
+              question: 'How will the system be deployed for its intended uses?',
               elaboration: 'How the AI system will be deployed and integrated into existing infrastructure.',
               importance: 'Deployment approach affects security, scalability, and operational risk management.'
             },
             {
               field: 'deploymentRequirements',
-              question: 'What are your deployment requirements?',
+              question: 'Have requirements for system deployment and operation been initially identified?',
               elaboration: 'Technical and operational prerequisites for successful system deployment.',
               importance: 'Proper requirements ensure system reliability and compliance readiness.'
             }
@@ -697,37 +697,37 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           questions: [
             {
               field: 'rolesDocumented',
-              question: 'Are roles and responsibilities for AI governance clearly documented?',
+              question: 'Have the roles and responsibilities of personnel involved in the design, development, deployment, assessment, and monitoring of the AI system been defined and documented?',
               elaboration: 'This ensures accountability frameworks are established for AI system oversight.',
               importance: 'Clear roles prevent governance gaps and ensure responsible AI implementation.'
             },
             {
               field: 'personnelTrained',
-              question: 'Is personnel trained on AI ethics, bias, and risk management?',
+              question: 'Are personnel provided with the necessary skills, training, and resources needed in order to fulfill their assigned roles and responsibilities?',
               elaboration: 'Training ensures staff competency in identifying and mitigating AI-related risks.',
               importance: 'Proper training reduces operational risks and ensures ethical AI practices.'
             },
             {
               field: 'humanInvolvement',
-              question: 'What level of human involvement exists in AI decision-making?',
+              question: 'What is the level of human involvement and control in relation to the AI system?',
               elaboration: 'Defines the degree of human oversight and control in AI system operations.',
               importance: 'Appropriate human involvement ensures accountability and risk management.'
             },
             {
               field: 'biasTraining',
-              question: 'Has bias awareness and mitigation training been provided?',
+              question: 'Are the relevant personnel dealing with AI systems properly trained to interpret AI model output and decisions as well as to detect and manage bias in data?',
               elaboration: 'Specialized training on identifying and addressing AI bias and fairness issues.',
               importance: 'Bias training prevents discriminatory outcomes and ensures equitable AI systems.'
             },
             {
               field: 'humanIntervention',
-              question: 'Can humans intervene in AI system decisions when needed?',
+              question: 'Are processes defined and documented where human intervention is required by the AI system?',
               elaboration: 'Capability for human operators to step in during AI system operations.',
               importance: 'Intervention capability ensures human control over critical decisions.'
             },
             {
               field: 'humanOverride',
-              question: 'Can humans override AI system decisions completely?',
+              question: 'Do human reviewers have the expertise and authority to override decisions made by the AI and modify them to the appropriate outcome?',
               elaboration: 'Ultimate human authority to reverse or modify AI system outputs.',
               importance: 'Override capability maintains human agency and prevents autonomous harm.'
             }
@@ -740,35 +740,34 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           isUser: false,
           description: "This section is intended to assess the measures in place to ensure that the AI system is developed for the good of society, the environment, and the community.",
           items: [
-            "✓ Governance Policies & Framework - Comprehensive AI governance framework established with clear policies for FinTech applications",
-            "✓ Business Objective and Use Case Description - Clear definition of fraud detection, KYC, AML, and risk management objectives",
-            "✓ Data Quality & Integrity Results - Robust data validation and quality assurance processes implemented",
-            "✓ Risk and Benefit Mapping - Systematic identification and assessment of AI system impacts on stakeholders",
-            "✓ All existing regulations and guidelines that may affect the AI system have been identified and compliance ensured"
+            "Mechanisms in place to identify and assess the impacts of the AI system on individuals, the environment, communities, and society",
+            "Potential negative impacts re-assessed if there are significant changes to the AI system in all stages of the AI lifecycle",
+            "Identified potential negative impacts used to inform and implement mitigating measures throughout the AI lifecycle",
+            "All existing regulations and guidelines that may affect the AI system have been identified"
           ],
-          recommendation: "Maintain regular impact assessments aligned with NIST AI RMF framework. Ensure compliance with financial regulations including Dodd-Frank Act. Implement continuous monitoring for societal and environmental impacts in FinTech applications."
+          recommendation: "Maintain regular impact assessments aligned with NIST AI RMF framework. Ensure compliance with applicable industry regulations. Implement continuous monitoring for societal and environmental impacts of your AI system."
         },
-        // Section 4: Safety and Reliability (User section)
+        // Section 4: Safety and Reliability of AI (User section)
     {
       number: 4,
-          title: "Safety and Reliability",
+          title: "Safety and Reliability of AI",
           isUser: true,
           questions: [
             {
               field: 'riskLevels',
-              question: 'What risk levels have been identified and assessed?',
+              question: 'Are tolerable risk levels defined for the AI system based on the business objectives, regulatory compliance, and data sensitivity requirements of the system?',
               elaboration: 'Systematic evaluation of potential risks associated with AI system deployment.',
               importance: 'Risk assessment enables appropriate mitigation strategies and compliance planning.'
             },
             {
               field: 'threatsIdentified',
-              question: 'What potential threats and vulnerabilities have been identified?',
+              question: 'Have the possible threats to the AI system (design faults, technical faults, environmental threats) been identified, and the possible consequences to AI trustworthiness?',
               elaboration: 'Identification of security, safety, and operational threats to the AI system.',
               importance: 'Threat identification enables proactive security measures and incident prevention.'
             },
             {
               field: 'maliciousUseAssessed',
-              question: 'Has the potential for malicious use been assessed?',
+              question: 'Are the risks of possible malicious use, misuse, or inappropriate use of the AI system assessed?',
               elaboration: 'Evaluation of how the AI system might be misused by bad actors.',
               importance: 'Malicious use assessment prevents dual-use concerns and reputational damage.'
             }
@@ -781,14 +780,14 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           isUser: false,
           description: "This section is intended to assess the measures in place to ensure the security of the AI system and its capability to respond to incidents and operate continuously.",
           items: [
-            "✓ Roles, Responsibilities, and Training - Clear AI governance roles established with comprehensive training programs",
-            "✓ Robustness and Security Testing - Advanced security testing including adversarial attacks and stress testing for FinTech models",
-            "✓ Risk Mitigation Strategies and Actions - Comprehensive risk mitigation framework with documented action plans",
-            "✓ Monitoring and Incident Response Plan - 24/7 monitoring systems with rapid incident response capabilities",
-            "✓ Third-Party & Supply Chain Risk Management - Vendor risk assessments and supply chain security controls",
-            "✓ System and Regulatory Context - Full compliance with financial industry security standards and regulations"
+            "Mechanisms in place to assess vulnerabilities in terms of security and resiliency across the AI lifecycle",
+            "Red-team exercises used to actively test the system under adversarial or stress conditions",
+            "Processes in place to modify system security and countermeasures to increase robustness",
+            "Processes in place to respond to incidents related to AI systems",
+            "Procedures and relevant performance metrics in place to monitor AI system's accuracy",
+            "Processes in place to establish and track security tests and metrics"
           ],
-          recommendation: "Implement comprehensive security testing including red-team exercises and continuous vulnerability assessments. Establish robust incident response procedures aligned with FinTech regulatory requirements."
+          recommendation: "Implement comprehensive security testing including adversarial robustness assessments and continuous vulnerability evaluations. Establish robust incident response procedures aligned with your industry's regulatory requirements."
         },
         // Section 6: Explainable and Interpretable AI (Auto section)
     {
@@ -797,14 +796,14 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           isUser: false,
           description: "This section is intended to assess the measures in place to ensure that information requirements for explainable AI are maintained, and AI decisions are interpreted as expected.",
           items: [
-            "✓ Risk Appetite and Ethical Principles - Clear risk appetite defined with ethical AI principles for financial decision-making",
-            "✓ Explainability and Transparency - Comprehensive model interpretability frameworks for fraud detection and AML systems",
-            "✓ Data Sources and Quality Considerations - Robust data lineage and quality management for financial data processing",
-            "✓ Model Performance Evaluation - Continuous performance monitoring with statistical significance testing",
-            "✓ Stakeholders and Impacted Users - Clear identification and engagement of all affected parties in financial AI systems",
-            "✓ Regulatory Compliance and Documentation - Complete documentation for regulatory audits and compliance reporting"
+            "Measures in place to address the traceability of the AI system during its entire lifecycle",
+            "Measures in place to continuously assess the quality of the input data to the AI system",
+            "Data used by the AI system is traceable to make certain decisions or recommendations",
+            "AI models or rules are traceable that led to the decisions or recommendations",
+            "Adequate logging practices in place to record the decisions or recommendations",
+            "Explanations on the decision of the AI system provided to relevant users and stakeholders"
           ],
-          recommendation: "Enhance traceability mechanisms and implement comprehensive logging. Ensure all decisions can be explained to relevant stakeholders with appropriate detail, especially for FinTech regulatory compliance."
+          recommendation: "Enhance traceability mechanisms and implement comprehensive logging for all AI decisions. Ensure all decisions can be explained to relevant stakeholders with appropriate detail for regulatory compliance in your industry."
         },
         // Section 7: Privacy and Data Governance (User section)
     {
@@ -814,55 +813,55 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           questions: [
             {
               field: 'personalInfoUsed',
-              question: 'Is personal information used by the AI system?',
+              question: 'Is the AI system being trained, or was it developed, by using or processing personal information?',
               elaboration: 'Identification of personal data processing within the AI system.',
               importance: 'Personal data usage triggers privacy regulations and protection requirements.'
             },
             {
               field: 'personalInfoCategories',
-              question: 'What categories of personal information are processed?',
+              question: 'Please describe the categories of personal information used by the AI system. Indicate if the system is using sensitive or special categories of personal information, including a description of the legal basis for processing the personal information.',
               elaboration: 'Detailed categorization of personal data types handled by the system.',
               importance: 'Data categorization determines protection levels and regulatory compliance needs.'
             },
             {
               field: 'privacyRegulations',
-              question: 'Which privacy regulations apply to your system?',
+              question: 'Have applicable legal regulations for privacy been identified and considered before processing personal information to train, develop, or deploy the AI system?',
               elaboration: 'Identification of relevant privacy laws and regulations for compliance.',
               importance: 'Regulatory compliance prevents legal risks and ensures user privacy protection.'
             },
             {
               field: 'privacyRiskAssessment',
-              question: 'Has a privacy risk assessment been conducted?',
+              question: 'Has a privacy risk assessment been conducted to ensure the privacy and security of the personal information used for the AI system?',
               elaboration: 'Systematic evaluation of privacy risks associated with data processing.',
               importance: 'Privacy risk assessment ensures proactive protection of personal data.'
             },
             {
               field: 'privacyByDesign',
-              question: 'Are privacy-by-design principles implemented?',
+              question: 'Have measures to achieve privacy by design and default been implemented when applicable to mitigate identified privacy risks?',
               elaboration: 'Integration of privacy considerations into system design and architecture.',
               importance: 'Privacy by design ensures fundamental protection rather than retroactive fixes.'
             },
             {
               field: 'individualsInformed',
-              question: 'Are individuals informed about how their data is used?',
+              question: 'Are individuals informed of the processing of their personal information for the development of the AI system?',
               elaboration: 'Transparency measures to inform data subjects about data processing activities.',
               importance: 'Transparency ensures informed consent and regulatory compliance.'
             },
             {
               field: 'privacyRights',
-              question: 'How are individual privacy rights handled and respected?',
+              question: 'Have mechanisms been implemented to enable individuals to exercise their right to privacy for any personal information used in the AI system?',
               elaboration: 'Mechanisms to support individual privacy rights like access, correction, and deletion.',
               importance: 'Privacy rights support ensures regulatory compliance and user trust.'
             },
             {
               field: 'dataQuality',
-              question: 'How is data quality and accuracy ensured?',
+              question: 'Are measures in place to ensure that the data used to develop the AI system is up-to-date, complete, and representative of the AI environment?',
               elaboration: 'Processes to maintain high-quality, accurate, and relevant training and operational data.',
               importance: 'Data quality directly impacts AI system performance and fairness.'
             },
             {
               field: 'thirdPartyRisks',
-              question: 'How are third-party data sharing risks managed?',
+              question: 'Have risks been assessed in using datasets obtained from third parties?',
               elaboration: 'Risk management for data sharing with external parties and vendors.',
               importance: 'Third-party risk management prevents data breaches and compliance violations.'
             }
@@ -875,14 +874,14 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           isUser: false,
           description: "This section is intended to assess the measures in place to ensure that the AI system is free from bias, inclusive, and diverse.",
           items: [
-            "✓ Stakeholder Engagement and Awareness - Comprehensive stakeholder mapping and engagement strategy for FinTech AI systems",
-            "✓ Bias and Fairness Testing - Advanced bias detection and mitigation for financial decision-making algorithms",
-            "✓ Privacy and Data Protection Assessment - GDPR, CCPA, and financial privacy regulation compliance framework",
-            "✓ Residual Risk Assessment and Acceptance - Formal risk acceptance procedures with board-level oversight",
-            "✓ Diverse and inclusive team working on AI development with representation from affected communities",
-            "✓ Ongoing Review and Improvement - Continuous improvement processes with regular bias and fairness audits"
+            "Strategy established to avoid creating or reinforcing unfair bias in the AI system",
+            "Diversity and representativeness of end-users considered in the data used for the AI system",
+            "Demographics of those involved in design and development documented to capture potential biases",
+            "AI actors are aware of the possible bias they can inject into the design and development",
+            "Mechanisms in place to test and monitor the AI system for potential biases",
+            "Identified issues related to bias, discrimination, and poor performance are mitigated"
           ],
-          recommendation: "Implement comprehensive bias testing and monitoring aligned with financial industry anti-discrimination requirements. Ensure diverse representation in development teams and training data to promote fairness and inclusivity."
+          recommendation: "Implement comprehensive bias testing and monitoring with appropriate fairness metrics for your use case. Ensure diverse representation in development teams and training data to promote fairness and inclusivity across all user groups."
         },
         // Section 9: Transparent and Accountable AI (Auto section)
     {
@@ -891,29 +890,27 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
           isUser: false,
           description: "This section is intended to assess the measures in place to provide sufficient and appropriate information to relevant stakeholders, at any point of the AI lifecycle.",
           items: [
-            "✓ Sufficient information provided to relevant AI actors to assist in making informed decisions",
-            "✓ Type of information accessible about the AI lifecycle is limited to what is relevant and sufficient",
-            "✓ End users are aware that they are interacting with an AI system and not a human",
-            "✓ End-users informed of the purpose, criteria, and limitations of AI-driven financial decisions",
-            "✓ End-users informed of the benefits of the AI system in fraud prevention and risk management",
-            "✓ Mechanism in place to regularly communicate with external stakeholders including regulators and auditors"
+            "Sufficient information provided to relevant AI actors to assist in making informed decisions",
+            "Type of information accessible about the AI lifecycle is limited to what is relevant and sufficient",
+            "End users are aware that they are interacting with an AI system and not a human",
+            "End-users informed of the purpose, criteria, and limitations of the decisions generated",
+            "End-users informed of the benefits of the AI system",
+            "Mechanism in place to regularly communicate with external stakeholders"
           ],
-          recommendation: "Establish clear communication protocols for all stakeholders including financial regulators. Ensure users are properly informed about AI interactions and system limitations in accordance with financial transparency requirements."
+          recommendation: "Establish clear communication protocols for all stakeholders including applicable regulators. Ensure users are properly informed about AI interactions and system limitations in accordance with transparency requirements for your industry."
         },
         // Section 10: AI Accountability (Auto section)
     {
       number: 10,
       title: "AI Accountability",
           isUser: false,
-          description: "This section is intended to ensure that the organization has risk management mechanisms in place to effectively manage identified AI risk.",
+          description: "This section is intended to ensure that the organization has risk management mechanisms in place to effectively manage identified AI risks.",
           items: [
-            "✓ Risk management system implemented to address risks identified in FinTech AI systems including fraud detection and AML",
-            "✓ AI system can be audited by independent third parties and financial regulators with full documentation access",
-            "✓ Checks conducted at appropriate intervals to confirm that the AI system remains trustworthy and compliant with evolving regulations",
-            "✓ Regulatory Compliance and Documentation - Complete audit trails and documentation for financial services oversight",
-            "✓ Continuous monitoring and performance evaluation against established financial industry benchmarks"
+            "Risk management system implemented to address risks identified in the AI system",
+            "AI system can be audited by independent third parties",
+            "Checks conducted at appropriate intervals to confirm that the AI system is still trustworthy"
           ],
-          recommendation: "Implement comprehensive risk management framework with regular audits aligned with financial regulatory requirements. Establish procedures for independent third-party assessments and continuous trustworthiness verification in accordance with FinTech compliance standards."
+          recommendation: "Implement comprehensive risk management framework with regular audits aligned with your industry's regulatory requirements. Establish procedures for independent third-party assessments and continuous trustworthiness verification in accordance with applicable compliance standards."
         }
       ];
 

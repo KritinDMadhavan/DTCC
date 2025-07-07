@@ -218,116 +218,115 @@
     {{ assessment_disclaimer }}
   </div>
 
-  <!-- System Overview -->
+  <!-- AI System Information -->
   <div class="section">
     <h2>2. AI System Information</h2>
     <div class="question-answer">
-      <div class="question">System Description:</div>
+      <div class="question">Describe the AI system</div>
       <div class="answer">{{ ai_system_description }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">System Purpose:</div>
+      <div class="question">What is the purpose of developing the AI system?</div>
       <div class="answer">{{ ai_system_purpose }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Deployment Method:</div>
+      <div class="question">How will the system be deployed for its intended uses?</div>
       <div class="answer">{{ deployment_method }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Deployment Requirements:</div>
+      <div class="question">Have requirements for system deployment and operation been initially identified?</div>
       <div class="answer">{{ deployment_requirements }}</div>
     </div>
   </div>
 
   <!-- Human and Stakeholder Involvement -->
   <div class="section">
-    <h2>3. Human and Stakeholder Involvement</h2>
+    <h2>2. Human and Stakeholder Involvement</h2>
     <div class="question-answer">
-      <div class="question">Are roles and responsibilities for AI governance clearly documented?</div>
+      <div class="question">Have the roles and responsibilities of personnel involved in the design, development, deployment, assessment, and monitoring of the AI system been defined and documented?</div>
       <div class="answer">{{ roles_documented }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Is personnel trained on AI ethics, bias, and risk management?</div>
+      <div class="question">Are personnel provided with the necessary skills, training, and resources needed in order to fulfill their assigned roles and responsibilities?</div>
       <div class="answer">{{ personnel_trained }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">What level of human involvement exists in AI decision-making?</div>
+      <div class="question">What is the level of human involvement and control in relation to the AI system?</div>
       <div class="answer">{{ human_involvement }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Has bias awareness and mitigation training been provided?</div>
+      <div class="question">Are the relevant personnel dealing with AI systems properly trained to interpret AI model output and decisions as well as to detect and manage bias in data?</div>
       <div class="answer">{{ bias_training }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Can humans intervene in AI system decisions when needed?</div>
+      <div class="question">Are processes defined and documented where human intervention is required by the AI system?</div>
       <div class="answer">{{ human_intervention }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Can humans override AI system decisions completely?</div>
+      <div class="question">Do human reviewers have the expertise and authority to override decisions made by the AI and modify them to the appropriate outcome?</div>
       <div class="answer">{{ human_override }}</div>
     </div>
   </div>
 
   <!-- Valid and Reliable AI (Auto-completed) -->
   <div class="section">
-    <h2>4. Valid and Reliable AI</h2>
+    <h2>3. Valid and Reliable AI</h2>
     <div class="auto-section">
       <p><strong>Status:</strong> Analysis completed - Standard controls implemented</p>
-      <p><strong>Description:</strong> This section assesses measures to ensure the AI system is developed for the good of society, environment, and community.</p>
+      <p><strong>Description:</strong> This section is intended to assess the measures in place to ensure that the AI system is developed for the good of society, the environment, and the community.</p>
       
       <ul class="auto-section-items">
-        <li>Governance Policies & Framework - Comprehensive AI governance framework established with clear policies for FinTech applications</li>
-        <li>Business Objective and Use Case Description - Clear definition of fraud detection, KYC, AML, and risk management objectives</li>
-        <li>Data Quality & Integrity Results - Robust data validation and quality assurance processes implemented</li>
-        <li>Risk and Benefit Mapping - Systematic identification and assessment of AI system impacts on stakeholders</li>
-        <li>All existing regulations and guidelines that may affect the AI system have been identified and compliance ensured</li>
+        <li>Mechanisms in place to identify and assess the impacts of the AI system on individuals, the environment, communities, and society</li>
+        <li>Potential negative impacts re-assessed if there are significant changes to the AI system in all stages of the AI lifecycle</li>
+        <li>Identified potential negative impacts used to inform and implement mitigating measures throughout the AI lifecycle</li>
+        <li>All existing regulations and guidelines that may affect the AI system have been identified</li>
       </ul>
       
-      <p><strong>Recommendation:</strong> Maintain regular impact assessments aligned with NIST AI RMF framework. Ensure compliance with financial regulations including Dodd-Frank Act.</p>
+      <p><strong>Recommendation:</strong> Maintain regular impact assessments aligned with NIST AI RMF framework. Ensure compliance with applicable industry regulations.</p>
     </div>
   </div>
 
   <!-- Safety and Reliability -->
   <div class="section">
-    <h2>5. Safety and Reliability</h2>
+    <h2>4. Safety and Reliability of AI</h2>
     <div class="question-answer">
-      <div class="question">What risk levels have been identified and assessed?</div>
+      <div class="question">Are tolerable risk levels defined for the AI system based on the business objectives, regulatory compliance, and data sensitivity requirements of the system?</div>
       <div class="answer">{{ risk_levels }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">What potential threats and vulnerabilities have been identified?</div>
+      <div class="question">Have the possible threats to the AI system (design faults, technical faults, environmental threats) been identified, and the possible consequences to AI trustworthiness?</div>
       <div class="answer">{{ threats_identified }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Has the potential for malicious use been assessed?</div>
+      <div class="question">Are the risks of possible malicious use, misuse, or inappropriate use of the AI system assessed?</div>
       <div class="answer">{{ malicious_use_assessed }}</div>
     </div>
   </div>
 
   <!-- Secure and Resilient AI (Auto-completed) -->
   <div class="section">
-    <h2>6. Secure and Resilient AI</h2>
+    <h2>5. Secure and Resilient AI</h2>
     <div class="auto-section">
       <p><strong>Status:</strong> Analysis completed - Standard controls implemented</p>
-      <p><strong>Description:</strong> This section assesses measures to ensure system security and capability to respond to incidents and operate continuously.</p>
+      <p><strong>Description:</strong> This section is intended to assess the measures in place to ensure the security of the AI system and its capability to respond to incidents and operate continuously.</p>
       
       <ul class="auto-section-items">
-        <li>Roles, Responsibilities, and Training - Clear AI governance roles established with comprehensive training programs</li>
-        <li>Robustness and Security Testing - Advanced security testing including adversarial attacks and stress testing for FinTech models</li>
-        <li>Risk Mitigation Strategies and Actions - Comprehensive risk mitigation framework with documented action plans</li>
-        <li>Monitoring and Incident Response Plan - 24/7 monitoring systems with rapid incident response capabilities</li>
-        <li>Third-Party & Supply Chain Risk Management - Vendor risk assessments and supply chain security controls</li>
-        <li>System and Regulatory Context - Full compliance with financial industry security standards and regulations</li>
+        <li>Mechanisms in place to assess vulnerabilities in terms of security and resiliency across the AI lifecycle</li>
+        <li>Red-team exercises used to actively test the system under adversarial or stress conditions</li>
+        <li>Processes in place to modify system security and countermeasures to increase robustness</li>
+        <li>Processes in place to respond to incidents related to AI systems</li>
+        <li>Procedures and relevant performance metrics in place to monitor AI system's accuracy</li>
+        <li>Processes in place to establish and track security tests and metrics</li>
       </ul>
       
       <p><strong>Recommendation:</strong> Implement comprehensive security testing including red-team exercises and continuous vulnerability assessments.</p>
@@ -336,18 +335,18 @@
 
   <!-- Explainable and Interpretable AI (Auto-completed) -->
   <div class="section">
-    <h2>7. Explainable and Interpretable AI</h2>
+    <h2>6. Explainable and Interpretable AI</h2>
     <div class="auto-section">
       <p><strong>Status:</strong> Analysis completed - Standard controls implemented</p>
-      <p><strong>Description:</strong> This section assesses measures to ensure information requirements for explainable AI are maintained and decisions are interpreted as expected.</p>
+      <p><strong>Description:</strong> This section is intended to assess the measures in place to ensure that information requirements for explainable AI are maintained, and AI decisions are interpreted as expected.</p>
       
       <ul class="auto-section-items">
-        <li>Risk Appetite and Ethical Principles - Clear risk appetite defined with ethical AI principles for financial decision-making</li>
-        <li>Explainability and Transparency - Comprehensive model interpretability frameworks for fraud detection and AML systems</li>
-        <li>Data Sources and Quality Considerations - Robust data lineage and quality management for financial data processing</li>
-        <li>Model Performance Evaluation - Continuous performance monitoring with statistical significance testing</li>
-        <li>Stakeholders and Impacted Users - Clear identification and engagement of all affected parties in financial AI systems</li>
-        <li>Regulatory Compliance and Documentation - Complete documentation for regulatory audits and compliance reporting</li>
+        <li>Measures in place to address the traceability of the AI system during its entire lifecycle</li>
+        <li>Measures in place to continuously assess the quality of the input data to the AI system</li>
+        <li>Data used by the AI system is traceable to make certain decisions or recommendations</li>
+        <li>AI models or rules are traceable that led to the decisions or recommendations</li>
+        <li>Adequate logging practices in place to record the decisions or recommendations</li>
+        <li>Explanations on the decision of the AI system provided to relevant users and stakeholders</li>
       </ul>
       
       <p><strong>Recommendation:</strong> Enhance traceability mechanisms and implement comprehensive logging for all decisions.</p>
@@ -356,67 +355,67 @@
 
   <!-- Privacy and Data Governance -->
   <div class="section">
-    <h2>8. Privacy and Data Governance</h2>
+    <h2>7. Privacy and Data Governance</h2>
     <div class="question-answer">
-      <div class="question">Is personal information used by the AI system?</div>
+      <div class="question">Is the AI system being trained, or was it developed, by using or processing personal information?</div>
       <div class="answer">{{ personal_info_used }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">What categories of personal information are processed?</div>
+      <div class="question">Please describe the categories of personal information used by the AI system. Indicate if the system is using sensitive or special categories of personal information, including a description of the legal basis for processing the personal information.</div>
       <div class="answer">{{ personal_info_categories }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Which privacy regulations apply to your system?</div>
+      <div class="question">Have applicable legal regulations for privacy been identified and considered before processing personal information to train, develop, or deploy the AI system?</div>
       <div class="answer">{{ privacy_regulations }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Has a privacy risk assessment been conducted?</div>
+      <div class="question">Has a privacy risk assessment been conducted to ensure the privacy and security of the personal information used for the AI system?</div>
       <div class="answer">{{ privacy_risk_assessment }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Are privacy-by-design principles implemented?</div>
+      <div class="question">Have measures to achieve privacy by design and default been implemented when applicable to mitigate identified privacy risks?</div>
       <div class="answer">{{ privacy_by_design }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">Are individuals informed about how their data is used?</div>
+      <div class="question">Are individuals informed of the processing of their personal information for the development of the AI system?</div>
       <div class="answer">{{ individuals_informed }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">How are individual privacy rights handled and respected?</div>
+      <div class="question">Have mechanisms been implemented to enable individuals to exercise their right to privacy for any personal information used in the AI system?</div>
       <div class="answer">{{ privacy_rights }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">How is data quality and accuracy ensured?</div>
+      <div class="question">Are measures in place to ensure that the data used to develop the AI system is up-to-date, complete, and representative of the AI environment?</div>
       <div class="answer">{{ data_quality }}</div>
     </div>
     
     <div class="question-answer">
-      <div class="question">How are third-party data sharing risks managed?</div>
+      <div class="question">Have risks been assessed in using datasets obtained from third parties?</div>
       <div class="answer">{{ third_party_risks }}</div>
     </div>
   </div>
 
   <!-- Fairness and Unbiased AI (Auto-completed) -->
   <div class="section">
-    <h2>9. Fairness and Unbiased AI</h2>
+    <h2>8. Fairness and Unbiased AI</h2>
     <div class="auto-section">
       <p><strong>Status:</strong> Analysis completed - Standard controls implemented</p>
-      <p><strong>Description:</strong> This section assesses measures to ensure the AI system is free from bias, inclusive, and diverse.</p>
+      <p><strong>Description:</strong> This section is intended to assess the measures in place to ensure that the AI system is free from bias, inclusive, and diverse.</p>
       
       <ul class="auto-section-items">
-        <li>Fairness and bias considerations integrated into financial AI design and testing processes</li>
-        <li>Demographic representation analysis conducted for lending and credit decision models</li>
-        <li>Algorithmic bias testing performed across protected classes for discrimination prevention</li>
-        <li>Diverse development teams and inclusive design practices for equitable financial services</li>
-        <li>Regular monitoring and correction mechanisms for bias detection in loan approvals and risk assessments</li>
-        <li>Compliance with Fair Credit Reporting Act (FCRA) and Equal Credit Opportunity Act (ECOA) requirements</li>
+        <li>Strategy established to avoid creating or reinforcing unfair bias in the AI system</li>
+        <li>Diversity and representativeness of end-users considered in the data used for the AI system</li>
+        <li>Demographics of those involved in design and development documented to capture potential biases</li>
+        <li>AI actors are aware of the possible bias they can inject into the design and development</li>
+        <li>Mechanisms in place to test and monitor the AI system for potential biases</li>
+        <li>Identified issues related to bias, discrimination, and poor performance are mitigated</li>
       </ul>
       
       <p><strong>Recommendation:</strong> Implement comprehensive bias testing and monitoring with diverse representation in development teams.</p>
@@ -425,18 +424,18 @@
 
   <!-- Transparent and Accountable AI (Auto-completed) -->
   <div class="section">
-    <h2>10. Transparent and Accountable AI</h2>
+    <h2>9. Transparent and Accountable AI</h2>
     <div class="auto-section">
       <p><strong>Status:</strong> Analysis completed - Standard controls implemented</p>
-      <p><strong>Description:</strong> This section assesses measures to provide sufficient information to relevant stakeholders at any point of the AI lifecycle.</p>
+      <p><strong>Description:</strong> This section is intended to assess the measures in place to provide sufficient and appropriate information to relevant stakeholders, at any point of the AI lifecycle.</p>
       
       <ul class="auto-section-items">
         <li>Sufficient information provided to relevant AI actors to assist in making informed decisions</li>
         <li>Type of information accessible about the AI lifecycle is limited to what is relevant and sufficient</li>
         <li>End users are aware that they are interacting with an AI system and not a human</li>
-        <li>End-users informed of the purpose, criteria, and limitations of AI-driven financial decisions</li>
-        <li>End-users informed of the benefits of the AI system in fraud prevention and risk management</li>
-        <li>Mechanism in place to regularly communicate with external stakeholders including regulators and auditors</li>
+        <li>End-users informed of the purpose, criteria, and limitations of the decisions generated</li>
+        <li>End-users informed of the benefits of the AI system</li>
+        <li>Mechanism in place to regularly communicate with external stakeholders</li>
       </ul>
       
       <p><strong>Recommendation:</strong> Establish clear communication protocols and ensure users are properly informed about AI interactions.</p>
@@ -445,20 +444,18 @@
 
   <!-- AI Accountability (Auto-completed) -->
   <div class="section">
-    <h2>11. AI Accountability</h2>
+    <h2>10. AI Accountability</h2>
     <div class="auto-section">
       <p><strong>Status:</strong> Analysis completed - Standard controls implemented</p>
-      <p><strong>Description:</strong> This section ensures the organization has risk management mechanisms to effectively manage identified AI risks.</p>
+      <p><strong>Description:</strong> This section is intended to ensure that the organization has risk management mechanisms in place to effectively manage identified AI risk.</p>
       
       <ul class="auto-section-items">
-        <li>Risk management system implemented to address risks identified in FinTech AI systems including fraud detection and AML</li>
-        <li>AI system can be audited by independent third parties and financial regulators with full documentation access</li>
-        <li>Checks conducted at appropriate intervals to confirm that the AI system remains trustworthy and compliant with evolving regulations</li>
-        <li>Regulatory Compliance and Documentation - Complete audit trails and documentation for financial services oversight</li>
-        <li>Continuous monitoring and performance evaluation against established financial industry benchmarks</li>
+        <li>Risk management system implemented to address risks identified in the AI system</li>
+        <li>AI system can be audited by independent third parties</li>
+        <li>Checks conducted at appropriate intervals to confirm that the AI system is still trustworthy</li>
       </ul>
       
-      <p><strong>Recommendation:</strong> Implement comprehensive risk management framework with regular audits and independent third-party assessments.</p>
+      <p><strong>Recommendation:</strong> Implement comprehensive risk management framework with regular audits and independent assessments.</p>
     </div>
   </div>
 
