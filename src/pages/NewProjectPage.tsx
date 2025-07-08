@@ -9,10 +9,9 @@ import { Boxes, ArrowRight, Bot, Activity } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 const projectTypes = [
- 
   {
     id: "generic",
-    name: "Supervised machine learning model",
+    name: "Machine learning model",
     icon: Activity,
   },
 ];
@@ -55,22 +54,19 @@ export default function NewProjectPage() {
         projectType === "generic" ? "ML" : projectType.toUpperCase();
       console.log(localStorage.getItem("access_token"));
       // API call to localhost
-      const response = await fetch(
-        "http://localhost:8000/projects/create",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-          body: JSON.stringify({
-            name: projectName,
-            description: description,
-            project_type: mappedProjectType,
-            status: "NotStarted",
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:8000/projects/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        body: JSON.stringify({
+          name: projectName,
+          description: description,
+          project_type: mappedProjectType,
+          status: "NotStarted",
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to create project");
@@ -201,7 +197,6 @@ export default function NewProjectPage() {
                       <h3 className="font-medium text-gray-900 text-sm">
                         {type.name}
                       </h3>
-                     
                     </div>
                   </div>
                 ))}
