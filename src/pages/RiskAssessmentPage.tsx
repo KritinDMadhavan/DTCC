@@ -422,6 +422,92 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
       let yPosition = margin;
       console.log('PDF instance created, dimensions:', pageWidth, 'x', pageHeight);
 
+      // Load header logo once at the beginning
+      let headerLogoDataUrl = '';
+      try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        
+        await new Promise<void>((resolve, reject) => {
+          logoImg.onload = () => {
+            try {
+              // Convert image to base64
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              if (!ctx) throw new Error('Canvas context not available');
+              
+              canvas.width = logoImg.width;
+              canvas.height = logoImg.height;
+              ctx.drawImage(logoImg, 0, 0);
+              headerLogoDataUrl = canvas.toDataURL('image/png');
+              
+              console.log('Header logo loaded successfully');
+              resolve();
+            } catch (error) {
+              console.error('Error processing header logo:', error);
+              resolve(); // Continue without logo
+            }
+          };
+          
+          logoImg.onerror = () => {
+            console.log('Header logo not found, continuing without logo');
+            resolve(); // Continue without logo
+          };
+          
+          logoImg.src = '/BC_logo.png';
+        });
+      } catch (error) {
+        console.log('Header logo loading failed, continuing without logo:', error);
+      }
+
+      // Helper function to add Block Convey header to pages (except first page)
+      const addBlockConveyHeader = () => {
+        // Save current state
+        const currentFontSize = pdf.getFontSize();
+        const currentFont = pdf.getFont();
+        
+        // Header background - dark blue-gray matching the image
+        pdf.setFillColor(72, 79, 89); // Dark slate gray
+        pdf.rect(0, 0, pageWidth, 25, 'F'); // Filled rectangle across top
+        
+        // Add diagonal cut at top right corner (geometric design element)
+        pdf.setFillColor(76, 126, 136); // Teal color for the diagonal
+        // Create diagonal triangle using lines (since triangle function may not exist)
+        pdf.setDrawColor(76, 126, 136);
+        pdf.setLineWidth(0);
+        
+        // Draw filled polygon for diagonal effect
+        const startX = pageWidth - 80;
+        const endX = pageWidth;
+        const height = 25;
+        
+        // Use multiple rectangles to simulate diagonal
+        for (let i = 0; i < 80; i++) {
+          const x = startX + i;
+          const rectHeight = (i / 80) * height;
+          if (rectHeight > 0) {
+            pdf.rect(x, 0, 1, rectHeight, 'F');
+          }
+        }
+        
+        // Add logo to left side of header if loaded
+                  if (headerLogoDataUrl) {
+            const logoWidth = 90; // Much larger width for strong brand presence
+            const logoHeight = 50; // Further increased vertical size for maximum prominence
+            const logoX = 5; // Slightly reduced left margin to accommodate larger size
+            const logoY = -12; // Centered vertically within header
+          
+          pdf.addImage(headerLogoDataUrl, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        }
+        
+        // Reset text color to black for content
+        pdf.setTextColor(0, 0, 0);
+        
+        // Restore previous font settings
+        pdf.setFontSize(currentFontSize);
+        pdf.setFont(currentFont.fontName, currentFont.fontStyle);
+      };
+
       // Helper function to check and add new page
       let currentPageNumber = 3; // Start counting from page 3
       
@@ -430,7 +516,12 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
         if (yPosition + additionalHeight > pageHeight - 20) {
           pdf.addPage();
           currentPageNumber++;
-          yPosition = 20; // 20px top margin
+          
+          // Add Block Convey header to all pages except first page
+          addBlockConveyHeader();
+          
+          yPosition = 35; // Start content below header (25px header + 10px spacing)
+          
           // Add page number at bottom right (overlapping the margin area)
           pdf.setFontSize(10);
           pdf.setFont('helvetica', 'normal');
@@ -495,7 +586,7 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
         // Add logo to PDF at top center if successfully loaded
         if (logoDataUrl) {
           const centerX = pageWidth / 2;
-          const logoWidth = 70;
+          const logoWidth = 90;
           const logoHeight = 30;
           const logoX = centerX - logoWidth / 2;
           const logoY = 40;
@@ -557,7 +648,7 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
       const assessmentDateText = `Assessment Date: ${coverCurrentDate}`;
       const assessmentDateWidth = pdf.getTextWidth(assessmentDateText);
       const assessmentDateX = centerX - assessmentDateWidth / 2;
-      const assessmentDateY = projectNameY + 60;
+      const assessmentDateY = projectNameY + 90;
       pdf.text(assessmentDateText, assessmentDateX, assessmentDateY);
       
       // 5. NIST Framework reference
@@ -566,7 +657,7 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
       const frameworkText = 'Based on NIST AI Risk Management Framework (AI RMF 1.0)';
       const frameworkWidth = pdf.getTextWidth(frameworkText);
       const frameworkX = centerX - frameworkWidth / 2;
-      const frameworkY = assessmentDateY + 10;
+      const frameworkY = assessmentDateY + 15;
       pdf.text(frameworkText, frameworkX, frameworkY);
       
       // No page number on cover page
@@ -575,9 +666,12 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
       pdf.addPage();
       
       // ========== CONTENT STARTS ON PAGE 2 ==========
+      // Add Block Convey header to page 2 (Table of Contents)
+      addBlockConveyHeader();
+      
       // Reset text color for subsequent pages
       pdf.setTextColor(0, 0, 0);
-      yPosition = margin + 20;
+      yPosition = 55; // Start below header (30px header + 25px spacing for main content)
 
       // Table of Contents Header
       pdf.setFontSize(14);
@@ -589,7 +683,7 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
       const tocEntries = [
         {
           type: 'main',
-          title: 'AI Risk Assessment Questionnaire',
+          title: 'AI Risk Assessment',
           page: 0,
           children: [
             { type: 'sub', title: 'Section 1: AI System Information', page: 0 },
@@ -623,7 +717,11 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
 
       // Add a new page for the actual content
       pdf.addPage();
-      yPosition = 20; // Set top margin to 20 for page 3
+      
+      // Add Block Convey header to page 3
+      addBlockConveyHeader();
+      
+      yPosition = 40; // Set top margin below header for page 3
       
       // Add page number for page 3
       pdf.setFontSize(10);
@@ -632,17 +730,17 @@ MAKE EVERY RECOMMENDATION UNIQUE - NO REPETITION ALLOWED!`
       const page3TextWidth = pdf.getTextWidth(page3Text);
       pdf.text(page3Text, pageWidth - 20 - page3TextWidth, pageHeight - 10);
       
-      // Add introductory paragraph before the questionnaire
+      // Add main heading for the questionnaire
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('AI Risk Assessment', margin, yPosition);
+      yPosition += 15;
+      
+      // Add introductory paragraph after the questionnaire heading
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
       const introText = `As part of our evaluation for ${actualProjectName}, we ensure that all AI systems used in high-stakes financial decision-making are aligned with applicable regulatory standards. Our assessment incorporates compliance checks against the Dodd-Frank Act, which mandates transparency, accountability, and consumer protection in financial services. This document outlines responses to the AI Risk Assessment based on the NIST AI Risk Management Framework. Each section is elaborated with context, rationale, and answers assuming compliance with best practices.`;
       addWrappedText(introText, 11, 'normal');
-      yPosition += 15;
-      
-      // Add main heading for the questionnaire
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('AI Risk Assessment Questionnaire', margin, yPosition);
       yPosition += 15;
       
       // Track page numbers for each section
@@ -1483,7 +1581,11 @@ Field: ${sa.question.field}`
       // Executive Summary (Enterprise-Level Overview)
       pdf.addPage();
       currentPageNumber++;
-      yPosition = margin + 5;
+      
+      // Add Block Convey header to Executive Summary page
+      addBlockConveyHeader();
+      
+      yPosition = 50; // Start below header
       // Add page number for this page
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(10);
@@ -1495,11 +1597,11 @@ Field: ${sa.question.field}`
         tocEntries[1].page = pdf.getNumberOfPages();
       }
       
-            // Title
+      // Title
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(16);
       addWrappedText('Executive Summary', 16, 'bold');
-      yPosition += 10;
+      yPosition += 2;
       
       // Introduction paragraph
       pdf.setFont('helvetica', 'normal');
@@ -2390,7 +2492,11 @@ Add disclaimer if many responses are "no" or missing.`
       // Responsible AI & Client Trust Statement
       pdf.addPage();
       currentPageNumber++;
-      yPosition = margin + 20;
+      
+      // Add Block Convey header to Responsible AI page
+      addBlockConveyHeader();
+      
+      yPosition = 50; // Start below header with more spacing
       
       // Add page number for this page
       pdf.setFont('helvetica', 'normal');
