@@ -2448,6 +2448,11 @@ Add disclaimer if many responses are "no" or missing.`
       
       yPosition += 10;
 
+      // Update TOC entry for Responsible AI & Client Trust Statement BEFORE rendering TOC
+      if (tocEntries[3]) {
+        tocEntries[3].page = pdf.getNumberOfPages() + 1; // Next page will be Responsible AI page
+      }
+      
       // Now go back and fill in the TOC on page 2
       const totalPages = pdf.getNumberOfPages();
       pdf.setPage(2); // Go back to Table of Contents page
@@ -2505,10 +2510,7 @@ Add disclaimer if many responses are "no" or missing.`
       const responsibleAIPageTextWidth = pdf.getTextWidth(responsibleAIPageText);
       pdf.text(responsibleAIPageText, pageWidth - 20 - responsibleAIPageTextWidth, pageHeight - 10);
       
-      // Update TOC entry for Responsible AI & Client Trust Statement (fourth main entry)
-      if (tocEntries[3]) {
-        tocEntries[3].page = pdf.getNumberOfPages();
-      }
+      // Page number already assigned before TOC rendering
       
       // Title
       pdf.setFont('helvetica', 'bold');
