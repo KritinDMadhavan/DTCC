@@ -210,7 +210,7 @@ const RiskAssessmentPage: React.FC = () => {
       // Check if models/data exist for this project
       try {
         const modelsResponse = await axios.get(
-          `https://prism-backend-dtcc-dot-block-convey-p1.uc.r.appspot.com/ml/${id}/models/list`,
+          `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/${id}/models/list`,
           config
         );
 
@@ -4614,7 +4614,7 @@ Add disclaimer if many responses are "no" or missing.`,
               AI Risk Assessment
             </h1>
             <p className="text-gray-600 mt-1">
-              {projectDetails?.project_name || `Project ${id}`} • Comprehensive
+            Comprehensive
               compliance evaluation
             </p>
           </div>

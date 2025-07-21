@@ -379,7 +379,7 @@ const ProjectOverviewPage: React.FC = () => {
     try {
       // Only fetch models for now since the dataset endpoint seems to be missing
       const modelsResponse = await axios.get(
-        `http://localhost:8000/ml/${id}/models/list`,
+        `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/${id}/models/list`,
         config
       );
 
@@ -394,7 +394,7 @@ const ProjectOverviewPage: React.FC = () => {
       // Try to fetch datasets separately to avoid Promise.all failing completely
       try {
         const datasetsResponse = await axios.get(
-          `http://localhost:8000/ml/${id}/datasets/list`,
+          `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/${id}/datasets/list`,
           config
         );
         setDatasets(datasetsResponse.data);

@@ -6,7 +6,7 @@ dispatch:
     service: redirect-service
 
   - url: "blockconvey.com/*"
-    service: blockconvey-main-website
+    service: blockconvey-main-website-nextjs
 
   - url: "console.blockconvey.com/*"
     service: api-service-console-frontend

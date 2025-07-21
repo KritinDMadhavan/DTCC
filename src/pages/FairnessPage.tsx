@@ -123,7 +123,7 @@ const FairnessPage: React.FC = () => {
           const model_version = modelData[0].model_version;
 
           const response = await axios.get(
-            `http://localhost:8000/ml/fairness/${id}/${modelId}/${model_version}`,
+            `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/fairness/${id}/${modelId}/${model_version}`,
             {
               headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -280,7 +280,7 @@ const FairnessPage: React.FC = () => {
               </p>
             </div>
 
-            {fairnessAPIData && (
+            {fairnessAPIData && fairnessAPIData.metrics && (
               <>
                 {/* Dataset Overview */}
                 <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
@@ -290,31 +290,11 @@ const FairnessPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900">
-                        {fairnessAPIData.metrics.dataset_info.sample_size}
-                      </div>
-                      <div className="text-sm text-gray-600">Sample Size</div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {fairnessAPIData.metrics.dataset_info.total_features}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Total Features
-                      </div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {fairnessAPIData.metrics.sensitive_features.length}
+                        {fairnessAPIData.metrics.sensitive_features?.length || 0}
                       </div>
                       <div className="text-sm text-gray-600">
                         Sensitive Features
                       </div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="text-2xl font-bold text-gray-900">
-                        {fairnessAPIData.metrics.status}
-                      </div>
-                      <div className="text-sm text-gray-600">Status</div>
                     </div>
                   </div>
 
@@ -729,22 +709,22 @@ const FairnessPage: React.FC = () => {
                     <div>
                       <span className="text-gray-600">Model:</span>
                       <span className="ml-2 font-medium">
-                        {fairnessAPIData.model_name} v
-                        {fairnessAPIData.model_version}
+                        {fairnessAPIData.model_name || 'Unknown'} v
+                        {fairnessAPIData.model_version || 'Unknown'}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Project ID:</span>
                       <span className="ml-2 font-medium">
-                        {fairnessAPIData.project_id}
+                        {fairnessAPIData.project_id || 'Unknown'}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Processed:</span>
                       <span className="ml-2 font-medium">
-                        {new Date(
-                          fairnessAPIData.metrics.processing_timestamp
-                        ).toLocaleString()}
+                        {fairnessAPIData.metrics.processing_timestamp 
+                          ? new Date(fairnessAPIData.metrics.processing_timestamp).toLocaleString()
+                          : 'Unknown'}
                       </span>
                     </div>
                   </div>

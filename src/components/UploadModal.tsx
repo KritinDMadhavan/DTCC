@@ -93,7 +93,7 @@ const UploadModal = ({
     const accessToken = localStorage.getItem("accessToken");
     if (accessToken) {
       try {
-        const response = await fetch("http://localhost:8000/getUserRepos", {
+        const response = await fetch("https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getUserRepos", {
           method: "GET",
           headers: {
             Authorization: "Bearer " + accessToken,
@@ -117,7 +117,7 @@ const UploadModal = ({
     if (selectedRepo && accessToken) {
       const path = pathStack.join("/");
       fetch(
-        `http://localhost:8000/getRepoContents?repo=${encodeURIComponent(
+        `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getRepoContents?repo=${encodeURIComponent(
           selectedRepo
         )}${path ? `&path=${encodeURIComponent(path)}` : ""}`,
         {
@@ -165,9 +165,9 @@ const UploadModal = ({
   };
 
   // Fix the process.env reference issue
-  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "http://localhost:8000";
+  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
   // If you're using Create React App instead of Vite, use this:
-  // const baseUrl = window.env?.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
+  // const baseUrl = window.env?.REACT_APP_API_BASE_URL || 'https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/api';
 
   // Send a signal to parent component to show animation on the page
   const emitProcessingSignal = (status: string, data = {}) => {
