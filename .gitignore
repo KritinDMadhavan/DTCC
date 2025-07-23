@@ -44,4 +44,4 @@ lerna-debug.log*
 *.tsbuildinfo
 
 # Vite
-.vite/
+.vite/PRISM_backend/
