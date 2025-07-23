@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 
 interface HeaderProps {
   userName?: string;
@@ -16,28 +17,25 @@ interface HeaderProps {
   onLogout?: () => Promise<void>;
 }
 
-const Header: React.FC<HeaderProps> = ({
-  userName = "John Doe",
-  userEmail = "john.doe@example.com",
-  onLogout,
-}) => {
+const Header: React.FC<HeaderProps> = ({ userName, userEmail, onLogout }) => {
+  const { user } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
-    name: userName,
-    email: userEmail,
+    name: "",
+    email: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Fetch user information when component mounts
     const getUserInfo = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        setIsLoading(true);
 
+        // First try to get user from auth context
         if (user) {
-          console.log("Found user:", user); // Debug logging
+          console.log("Found user from auth context:", user);
 
           try {
             // Get user profile data if you have a profiles table
@@ -48,14 +46,14 @@ const Header: React.FC<HeaderProps> = ({
               .single();
 
             if (!profileError && profileData) {
-              console.log("Found profile data:", profileData); // Debug logging
-
+              console.log("Found profile data:", profileData);
               setUserInfo({
                 name:
                   profileData?.full_name ||
                   user.user_metadata?.full_name ||
-                  userName,
-                email: user.email || userEmail,
+                  user.email?.split("@")[0] ||
+                  "User",
+                email: user.email || "",
               });
             } else {
               // If no profile or error, just use the user data
@@ -63,30 +61,42 @@ const Header: React.FC<HeaderProps> = ({
                 name:
                   user.user_metadata?.full_name ||
                   user.email?.split("@")[0] ||
-                  userName,
-                email: user.email || userEmail,
+                  "User",
+                email: user.email || "",
               });
             }
           } catch (profileError) {
             console.error("Error fetching profile:", profileError);
-
             // Fallback to auth user data
             setUserInfo({
               name:
                 user.user_metadata?.full_name ||
                 user.email?.split("@")[0] ||
-                userName,
-              email: user.email || userEmail,
+                "User",
+              email: user.email || "",
             });
           }
+        } else {
+          // Fallback to props if no user in context
+          setUserInfo({
+            name: userName || "User",
+            email: userEmail || "",
+          });
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
+        // Fallback to props
+        setUserInfo({
+          name: userName || "User",
+          email: userEmail || "",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     getUserInfo();
-  }, [userName, userEmail]);
+  }, [user, userName, userEmail]);
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -151,6 +161,18 @@ const Header: React.FC<HeaderProps> = ({
     setIsDropdownOpen(false);
     navigate("/profile");
   };
+
+  // Show full-screen loading state while user data is being fetched
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 h-16 z-50 sticky top-0">
