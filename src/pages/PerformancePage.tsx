@@ -215,9 +215,7 @@ const UploadModal = () => (
       <Button className="bg-primary text-white hover:bg-primary/90 px-8 py-6 text-lg shadow-lg">
         Upload Model
       </Button>
-      <p className="mt-4 text-sm text-gray-500">
-        Supported formats: .h5, .pkl, .pt, .onnx
-      </p>
+      <p className="mt-4 text-sm text-gray-500">Supported formats: .pkl</p>
     </div>
   </div>
 );

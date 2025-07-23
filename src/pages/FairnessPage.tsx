@@ -79,9 +79,7 @@ const UploadModal = () => (
       <Button className="bg-primary text-white hover:bg-primary/90 px-8 py-6 text-lg shadow-lg">
         Upload Model
       </Button>
-      <p className="mt-4 text-sm text-gray-500">
-        Supported formats: .h5, .pkl, .pt, .onnx
-      </p>
+      <p className="mt-4 text-sm text-gray-500">Supported formats: .pkl</p>
     </div>
   </div>
 );
@@ -290,7 +288,8 @@ const FairnessPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
                       <div className="text-2xl font-bold text-gray-900">
-                        {fairnessAPIData.metrics.sensitive_features?.length || 0}
+                        {fairnessAPIData.metrics.sensitive_features?.length ||
+                          0}
                       </div>
                       <div className="text-sm text-gray-600">
                         Sensitive Features
@@ -709,22 +708,24 @@ const FairnessPage: React.FC = () => {
                     <div>
                       <span className="text-gray-600">Model:</span>
                       <span className="ml-2 font-medium">
-                        {fairnessAPIData.model_name || 'Unknown'} v
-                        {fairnessAPIData.model_version || 'Unknown'}
+                        {fairnessAPIData.model_name || "Unknown"} v
+                        {fairnessAPIData.model_version || "Unknown"}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Project ID:</span>
                       <span className="ml-2 font-medium">
-                        {fairnessAPIData.project_id || 'Unknown'}
+                        {fairnessAPIData.project_id || "Unknown"}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Processed:</span>
                       <span className="ml-2 font-medium">
-                        {fairnessAPIData.metrics.processing_timestamp 
-                          ? new Date(fairnessAPIData.metrics.processing_timestamp).toLocaleString()
-                          : 'Unknown'}
+                        {fairnessAPIData.metrics.processing_timestamp
+                          ? new Date(
+                              fairnessAPIData.metrics.processing_timestamp
+                            ).toLocaleString()
+                          : "Unknown"}
                       </span>
                     </div>
                   </div>

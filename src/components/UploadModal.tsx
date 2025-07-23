@@ -93,12 +93,15 @@ const UploadModal = ({
     const accessToken = localStorage.getItem("accessToken");
     if (accessToken) {
       try {
-        const response = await fetch("https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getUserRepos", {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + accessToken,
-          },
-        });
+        const response = await fetch(
+          "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getUserRepos",
+          {
+            method: "GET",
+            headers: {
+              Authorization: "Bearer " + accessToken,
+            },
+          }
+        );
         const data = await response.json();
         if (Array.isArray(data)) {
           const names = data.map((repo: any) => repo.full_name);
@@ -165,7 +168,9 @@ const UploadModal = ({
   };
 
   // Fix the process.env reference issue
-  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
+  const baseUrl =
+    import.meta.env?.VITE_API_BASE_URL ||
+    "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
   // If you're using Create React App instead of Vite, use this:
   // const baseUrl = window.env?.REACT_APP_API_BASE_URL || 'https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/api';
 
@@ -1221,9 +1226,7 @@ const UploadModal = ({
                   <label className="block font-medium mb-2 text-gray-700 flex items-center">
                     Model File <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <p className="text-sm text-gray-500 mb-3">
-                    Supports .pkl, .onnx, .h5, .pt, .joblib, etc.
-                  </p>
+                  <p className="text-sm text-gray-500 mb-3">Supports .pkl</p>
 
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
                     <input

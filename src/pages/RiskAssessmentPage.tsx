@@ -18,6 +18,8 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import axios from "axios";
+import AIEnhancedTextArea from "../components/AIEnhancedTextArea";
+import AITestComponent from "../components/AITestComponent";
 
 interface ModelData {
   model_id: string;
@@ -4099,22 +4101,16 @@ Add disclaimer if many responses are "no" or missing.`,
     placeholder: string,
     tip?: string
   ) => (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
-      {tip && (
-        <div className="flex items-start space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-blue-700">{tip}</p>
-        </div>
-      )}
-      <textarea
-        value={assessmentData[field]}
-        onChange={(e) => handleInputChange(field, e.target.value)}
-        placeholder={placeholder}
-        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
-        rows={4}
-      />
-    </div>
+    <AIEnhancedTextArea
+      label={label}
+      field={field}
+      placeholder={placeholder}
+      tip={tip}
+      questionContext={`This is a risk assessment question about ${label.toLowerCase()}. Consider compliance requirements, technical accuracy, and industry best practices when providing suggestions or enhancements.`}
+      onValueChange={(value) => handleInputChange(field, value)}
+      value={assessmentData[field]}
+      rows={4}
+    />
   );
 
   const renderRadioGroup = (
@@ -4154,10 +4150,31 @@ Add disclaimer if many responses are "no" or missing.`,
         field === "biasTraining" ||
         field === "humanOverride") && (
         <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Additional Description
-          </label>
-          <textarea
+          <AIEnhancedTextArea
+            label="Additional Description"
+            field={
+              field === "rolesDocumented"
+                ? "rolesDocumentedDescription"
+                : field === "personnelTrained"
+                ? "personnelTrainedDescription"
+                : field === "biasTraining"
+                ? "biasTrainingDescription"
+                : "humanOverrideDescription"
+            }
+            placeholder="Provide additional details or context..."
+            questionContext={`This is an additional description field for ${label.toLowerCase()}. Provide detailed, professional context that supports the main answer.`}
+            onValueChange={(value) =>
+              handleInputChange(
+                field === "rolesDocumented"
+                  ? "rolesDocumentedDescription"
+                  : field === "personnelTrained"
+                  ? "personnelTrainedDescription"
+                  : field === "biasTraining"
+                  ? "biasTrainingDescription"
+                  : "humanOverrideDescription",
+                value
+              )
+            }
             value={
               field === "rolesDocumented"
                 ? assessmentData.rolesDocumentedDescription || ""
@@ -4167,20 +4184,6 @@ Add disclaimer if many responses are "no" or missing.`,
                 ? assessmentData.biasTrainingDescription || ""
                 : assessmentData.humanOverrideDescription || ""
             }
-            onChange={(e) =>
-              handleInputChange(
-                field === "rolesDocumented"
-                  ? "rolesDocumentedDescription"
-                  : field === "personnelTrained"
-                  ? "personnelTrainedDescription"
-                  : field === "biasTraining"
-                  ? "biasTrainingDescription"
-                  : "humanOverrideDescription",
-                e.target.value
-              )
-            }
-            placeholder="Provide additional details or context..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm"
             rows={3}
           />
         </div>
@@ -5928,6 +5931,11 @@ Add disclaimer if many responses are "no" or missing.`,
             getSectionCompletion(10).completed,
             getSectionCompletion(10).total
           )}
+        </div>
+
+        {/* AI Test Component - Remove after testing */}
+        <div className="mt-8 mb-8">
+          <AITestComponent />
         </div>
 
         {/* Action Buttons */}
