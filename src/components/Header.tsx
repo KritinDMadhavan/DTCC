@@ -176,7 +176,7 @@ const Header: React.FC<HeaderProps> = ({ userName, userEmail, onLogout }) => {
 
   return (
     <header className="bg-white border-b border-gray-200 h-16 z-50 sticky top-0">
-      <div className="max-w-[1400px] mx-auto px-6 flex h-16 items-center justify-between">
+      <div className="w-full px-6 flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
           <motion.div
