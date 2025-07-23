@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Button } from "../components/ui/button";
 import {
   CheckCircle,
   Info,
-  Save,
-  ArrowLeft,
   FileText,
   ChevronDown,
   ChevronUp,
@@ -13,7 +10,6 @@ import {
   BarChart3,
   Shield,
   AlertTriangle,
-  Target,
   Calendar,
   Users,
   TrendingUp,
@@ -46,11 +42,33 @@ interface AssessmentData {
   deploymentMethod: string;
   deploymentRequirements: string;
   rolesDocumented: string;
+  rolesDocumentedDescription: string;
   personnelTrained: string;
+  personnelTrainedDescription: string;
   humanInvolvement: string;
   biasTraining: string;
+  biasTrainingDescription: string;
   humanIntervention: string;
   humanOverride: string;
+  humanOverrideDescription: string;
+  impactAssessmentMechanisms: string;
+  negativeImpactsReassessed: string;
+  mitigatingMeasuresImplemented: string;
+  regulationsIdentified: string;
+  vulnerabilityAssessmentMechanisms: string;
+  redTeamExercises: string;
+  securityModificationProcesses: string;
+  incidentResponseProcesses: string;
+  securityTestsMetrics: string;
+  demographicsDocumented: string;
+  aiActorsBiasAwareness: string;
+  sufficientInfoProvided: string;
+  endUsersAware: string;
+  endUsersInformed: string;
+  endUsersBenefits: string;
+  externalStakeholders: string;
+  riskManagementSystem: string;
+  aiSystemAuditable: string;
   riskLevels: string;
   threatsIdentified: string;
   maliciousUseAssessed: string;
@@ -106,17 +124,40 @@ const RiskAssessmentPage: React.FC = () => {
   const [projectDetails, setProjectDetails] = useState<ProjectDetails | null>(
     null
   );
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [assessmentData, setAssessmentData] = useState<AssessmentData>({
     aiSystemDescription: "",
     aiSystemPurpose: "",
     deploymentMethod: "",
     deploymentRequirements: "",
     rolesDocumented: "",
+    rolesDocumentedDescription: "",
     personnelTrained: "",
+    personnelTrainedDescription: "",
     humanInvolvement: "",
     biasTraining: "",
+    biasTrainingDescription: "",
     humanIntervention: "",
     humanOverride: "",
+    humanOverrideDescription: "",
+    impactAssessmentMechanisms: "",
+    negativeImpactsReassessed: "",
+    mitigatingMeasuresImplemented: "",
+    regulationsIdentified: "",
+    vulnerabilityAssessmentMechanisms: "",
+    redTeamExercises: "",
+    securityModificationProcesses: "",
+    incidentResponseProcesses: "",
+    securityTestsMetrics: "",
+    demographicsDocumented: "",
+    aiActorsBiasAwareness: "",
+    sufficientInfoProvided: "",
+    endUsersAware: "",
+    endUsersInformed: "",
+    endUsersBenefits: "",
+    externalStakeholders: "",
+    riskManagementSystem: "",
+    aiSystemAuditable: "",
     riskLevels: "",
     threatsIdentified: "",
     maliciousUseAssessed: "",
@@ -138,6 +179,148 @@ const RiskAssessmentPage: React.FC = () => {
     Set<number>
   >(new Set()); // Track which auto sections are actually completed
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Function to load data from localStorage
+  const loadDataFromStorage = () => {
+    if (!id) {
+      console.log("No project ID available for localStorage");
+      return;
+    }
+
+    const storageKey = `assessment_${id}`;
+    console.log("Loading from localStorage with key:", storageKey);
+
+    const savedData = localStorage.getItem(storageKey);
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        console.log("Loaded data from localStorage:", parsedData);
+        setAssessmentData(parsedData.assessmentData);
+        setLastUpdated(new Date(parsedData.lastUpdated));
+        if (parsedData.autoSectionsCompleted) {
+          setAutoSectionsCompleted(new Set(parsedData.autoSectionsCompleted));
+        }
+        setDataLoaded(true);
+        console.log("Data successfully loaded from localStorage");
+      } catch (error) {
+        console.error(
+          "Error loading assessment data from localStorage:",
+          error
+        );
+      }
+    } else {
+      console.log("No saved data found in localStorage");
+      setDataLoaded(true);
+    }
+  };
+
+  // Load assessment data from localStorage on component mount
+  useEffect(() => {
+    loadDataFromStorage();
+  }, [id]);
+
+  // Reload data when window gains focus (user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log("Window focused, reloading data...");
+      loadDataFromStorage();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [id]);
+
+  // Save assessment data to localStorage whenever it changes
+  useEffect(() => {
+    if (!id || !dataLoaded) {
+      console.log("Skipping save - no project ID or data not loaded yet");
+      return;
+    }
+
+    setIsSaving(true);
+    const storageKey = `assessment_${id}`;
+    const dataToSave = {
+      assessmentData,
+      lastUpdated: lastUpdated.toISOString(),
+      autoSectionsCompleted: Array.from(autoSectionsCompleted),
+      projectId: id,
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      console.log(
+        "Saved data to localStorage with key:",
+        storageKey,
+        dataToSave
+      );
+    } catch (error) {
+      console.error("Error saving to localStorage:", error);
+    } finally {
+      // Hide saving indicator after a short delay
+      setTimeout(() => setIsSaving(false), 1000);
+    }
+  }, [assessmentData, lastUpdated, autoSectionsCompleted, id, dataLoaded]);
+
+  // Function to clear saved assessment data
+  const clearSavedData = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to reset all progress? This action cannot be undone."
+      )
+    ) {
+      localStorage.removeItem(`assessment_${id}`);
+      setAssessmentData({
+        aiSystemDescription: "",
+        aiSystemPurpose: "",
+        deploymentMethod: "",
+        deploymentRequirements: "",
+        rolesDocumented: "",
+        rolesDocumentedDescription: "",
+        personnelTrained: "",
+        personnelTrainedDescription: "",
+        humanInvolvement: "",
+        biasTraining: "",
+        biasTrainingDescription: "",
+        humanIntervention: "",
+        humanOverride: "",
+        humanOverrideDescription: "",
+        impactAssessmentMechanisms: "",
+        negativeImpactsReassessed: "",
+        mitigatingMeasuresImplemented: "",
+        regulationsIdentified: "",
+        vulnerabilityAssessmentMechanisms: "",
+        redTeamExercises: "",
+        securityModificationProcesses: "",
+        incidentResponseProcesses: "",
+        securityTestsMetrics: "",
+        demographicsDocumented: "",
+        aiActorsBiasAwareness: "",
+        sufficientInfoProvided: "",
+        endUsersAware: "",
+        endUsersInformed: "",
+        endUsersBenefits: "",
+        externalStakeholders: "",
+        riskManagementSystem: "",
+        aiSystemAuditable: "",
+        riskLevels: "",
+        threatsIdentified: "",
+        maliciousUseAssessed: "",
+        personalInfoUsed: "",
+        personalInfoCategories: "",
+        privacyRegulations: "",
+        privacyRiskAssessment: "",
+        privacyByDesign: "",
+        individualsInformed: "",
+        privacyRights: "",
+        dataQuality: "",
+        thirdPartyRisks: "",
+      });
+      setLastUpdated(new Date());
+      setAutoSectionsCompleted(new Set());
+    }
+  };
 
   useEffect(() => {
     if (!isDummyProject && id) {
@@ -237,6 +420,7 @@ const RiskAssessmentPage: React.FC = () => {
       ...prev,
       [field]: value,
     }));
+    setLastUpdated(new Date());
   };
 
   const handleSave = async () => {
@@ -3720,9 +3904,51 @@ Add disclaimer if many responses are "no" or missing.`,
       ],
     },
     {
+      number: 3,
+      title: "Valid and Reliable AI",
+      fields: [
+        "impactAssessmentMechanisms",
+        "negativeImpactsReassessed",
+        "mitigatingMeasuresImplemented",
+        "regulationsIdentified",
+      ],
+    },
+    {
       number: 4,
       title: "Safety and Reliability of AI",
       fields: ["riskLevels", "threatsIdentified", "maliciousUseAssessed"],
+    },
+    {
+      number: 5,
+      title: "Secure and Resilient AI",
+      fields: [
+        "vulnerabilityAssessmentMechanisms",
+        "redTeamExercises",
+        "securityModificationProcesses",
+        "incidentResponseProcesses",
+        "securityTestsMetrics",
+      ],
+    },
+    {
+      number: 8,
+      title: "Fairness and Unbiased AI",
+      fields: ["demographicsDocumented", "aiActorsBiasAwareness"],
+    },
+    {
+      number: 9,
+      title: "Transparent and Accountable AI",
+      fields: [
+        "sufficientInfoProvided",
+        "endUsersAware",
+        "endUsersInformed",
+        "endUsersBenefits",
+        "externalStakeholders",
+      ],
+    },
+    {
+      number: 10,
+      title: "AI Accountability",
+      fields: ["riskManagementSystem", "aiSystemAuditable"],
     },
     {
       number: 7,
@@ -3741,7 +3967,7 @@ Add disclaimer if many responses are "no" or missing.`,
     },
   ];
 
-  const autoCompletedSections = [3, 5, 6, 8, 9, 10];
+  const autoCompletedSections = [6];
 
   const calculateProgress = () => {
     let completedFields = 0;
@@ -3923,6 +4149,42 @@ Add disclaimer if many responses are "no" or missing.`,
           </label>
         ))}
       </div>
+      {(field === "rolesDocumented" ||
+        field === "personnelTrained" ||
+        field === "biasTraining" ||
+        field === "humanOverride") && (
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Additional Description
+          </label>
+          <textarea
+            value={
+              field === "rolesDocumented"
+                ? assessmentData.rolesDocumentedDescription || ""
+                : field === "personnelTrained"
+                ? assessmentData.personnelTrainedDescription || ""
+                : field === "biasTraining"
+                ? assessmentData.biasTrainingDescription || ""
+                : assessmentData.humanOverrideDescription || ""
+            }
+            onChange={(e) =>
+              handleInputChange(
+                field === "rolesDocumented"
+                  ? "rolesDocumentedDescription"
+                  : field === "personnelTrained"
+                  ? "personnelTrainedDescription"
+                  : field === "biasTraining"
+                  ? "biasTrainingDescription"
+                  : "humanOverrideDescription",
+                e.target.value
+              )
+            }
+            placeholder="Provide additional details or context..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm"
+            rows={3}
+          />
+        </div>
+      )}
     </div>
   );
 
@@ -3997,6 +4259,59 @@ Add disclaimer if many responses are "no" or missing.`,
       </div>
     </div>
   );
+
+  const getSectionCompletion = (sectionNumber: number) => {
+    const section = userSections.find((s) => s.number === sectionNumber);
+    if (!section) return { completed: 0, total: 0 };
+
+    const completed = section.fields.filter(
+      (field) => assessmentData[field as keyof AssessmentData]
+    ).length;
+    const total = section.fields.length;
+
+    return { completed, total };
+  };
+
+  const getTotalSections = () => {
+    return userSections.length + autoCompletedSections.length;
+  };
+
+  const getUserSectionsCount = () => {
+    return userSections.length;
+  };
+
+  const getAutoCompletedSectionsCount = () => {
+    return autoCompletedSections.length;
+  };
+
+  const getTotalQuestions = () => {
+    return userSections.reduce(
+      (acc, section) => acc + section.fields.length,
+      0
+    );
+  };
+
+  const getCompletedQuestions = () => {
+    return userSections.reduce(
+      (acc, section) =>
+        acc +
+        section.fields.filter(
+          (field) => assessmentData[field as keyof AssessmentData]
+        ).length,
+      0
+    );
+  };
+
+  const getTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  };
 
   const renderCollapsibleSection = (
     sectionNumber: number,
@@ -4554,7 +4869,7 @@ Add disclaimer if many responses are "no" or missing.`,
               </div>
               <div className="bg-emerald-50 rounded-lg p-3">
                 <div className="text-2xl font-bold text-emerald-600">
-                  {getCompletedSections()}/10
+                  {getCompletedSections()}/{getTotalSections()}
                 </div>
                 <div className="text-sm text-emerald-700">Sections</div>
               </div>
@@ -4609,14 +4924,59 @@ Add disclaimer if many responses are "no" or missing.`,
               <span className="font-medium text-gray-700">
                 AI Risk Assessment
               </span>
+              <div className="flex items-center ml-4">
+                <div
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    isSaving ? "bg-yellow-500 animate-pulse" : "bg-green-500"
+                  }`}
+                ></div>
+                <span
+                  className={`text-xs ${
+                    isSaving ? "text-yellow-600" : "text-green-600"
+                  }`}
+                >
+                  {isSaving ? "Saving..." : "Auto-saved"}
+                </span>
+              </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900">
               AI Risk Assessment
             </h1>
             <p className="text-gray-600 mt-1">
-            Comprehensive
-              compliance evaluation
+              Comprehensive compliance evaluation
             </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={() => {
+                console.log("Current project ID:", id);
+                console.log("Current localStorage key:", `assessment_${id}`);
+                console.log(
+                  "All localStorage keys:",
+                  Object.keys(localStorage)
+                );
+                console.log("Current assessment data:", assessmentData);
+                console.log("Data loaded flag:", dataLoaded);
+              }}
+              variant="outline"
+              className="text-blue-600 border-blue-200 hover:bg-blue-50 text-sm px-3 py-1"
+            >
+              Debug Storage
+            </Button>
+            <Button
+              onClick={loadDataFromStorage}
+              variant="outline"
+              className="text-green-600 border-green-200 hover:bg-green-50 text-sm px-3 py-1"
+            >
+              Reload Data
+            </Button>
+            <Button
+              onClick={clearSavedData}
+              variant="outline"
+              className="text-red-600 border-red-200 hover:bg-red-50 text-sm px-3 py-1"
+            >
+              Reset Progress
+            </Button>
           </div>
         </div>
 
@@ -4644,7 +5004,7 @@ Add disclaimer if many responses are "no" or missing.`,
               ></div>
             </div>
             <p className="text-xs text-gray-500">
-              {getCompletedSections()}/10 sections complete
+              {getCompletedSections()}/{getTotalSections()} sections complete
             </p>
           </div>
 
@@ -4765,7 +5125,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   <span className="text-sm text-gray-600">User Sections</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900">
-                  4 sections
+                  {getUserSectionsCount()} sections
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -4774,7 +5134,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   <span className="text-sm text-gray-600">Auto-completed</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900">
-                  6 sections
+                  {getAutoCompletedSectionsCount()} sections
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -4783,11 +5143,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   <span className="text-sm text-gray-600">Total Questions</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900">
-                  {userSections.reduce(
-                    (acc, section) => acc + section.fields.length,
-                    0
-                  )}{" "}
-                  questions
+                  {getTotalQuestions()} questions
                 </span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-gray-100">
@@ -4796,7 +5152,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   <span className="text-sm text-gray-600">Last Updated</span>
                 </div>
                 <span className="text-sm font-medium text-gray-900">
-                  Just now
+                  {getTimeAgo(lastUpdated)}
                 </span>
               </div>
             </div>
@@ -4840,10 +5196,8 @@ Add disclaimer if many responses are "no" or missing.`,
               )}
             </div>,
             false,
-            userSections[0].fields.filter(
-              (field) => assessmentData[field as keyof AssessmentData]
-            ).length,
-            userSections[0].fields.length
+            getSectionCompletion(1).completed,
+            getSectionCompletion(1).total
           )}
 
           {/* Section 2: Human and Stakeholder Involvement */}
@@ -4939,39 +5293,58 @@ Add disclaimer if many responses are "no" or missing.`,
               )}
             </div>,
             false,
-            userSections[1].fields.filter(
-              (field) => assessmentData[field as keyof AssessmentData]
-            ).length,
-            userSections[1].fields.length
+            getSectionCompletion(2).completed,
+            getSectionCompletion(2).total
           )}
 
           {/* Section 3: Valid and Reliable AI */}
           {renderCollapsibleSection(
             3,
             "Valid and Reliable AI",
-            autoSectionsCompleted.has(3)
-              ? renderCompletedSection(
-                  "This section is intended to assess the measures in place to ensure that the AI system is developed for the good of society, the environment, and the community.",
-                  [
-                    "✓ Mechanisms in place to identify and assess the impacts of the AI system on individuals, the environment, communities, and society",
-                    "✓ Potential negative impacts re-assessed if there are significant changes to the AI system in all stages of the AI lifecycle",
-                    "✓ Identified potential negative impacts used to inform and implement mitigating measures throughout the AI lifecycle",
-                    "✓ All existing regulations and guidelines that may affect the AI system have been identified",
-                  ]
-                )
-              : renderIncompleteSection(
-                  "Valid and Reliable AI",
-                  "This section is intended to assess the measures in place to ensure that the AI system is developed for the good of society, the environment, and the community.",
-                  [
-                    "Mechanisms in place to identify and assess the impacts of the AI system on individuals, the environment, communities, and society",
-                    "Potential negative impacts re-assessed if there are significant changes to the AI system in all stages of the AI lifecycle",
-                    "Identified potential negative impacts used to inform and implement mitigating measures throughout the AI lifecycle",
-                    "All existing regulations and guidelines that may affect the AI system have been identified",
-                  ]
-                ),
-            autoSectionsCompleted.has(3),
-            autoSectionsCompleted.has(3) ? 4 : 0,
-            4
+            <div className="space-y-6">
+              {renderRadioGroup(
+                "Are mechanisms in place to identify and assess the impacts of the AI system on individuals, the environment, communities, and society?",
+                "impactAssessmentMechanisms",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are potential negative impacts re-assessed if there are significant changes to the AI system in all stages of the AI lifecycle?",
+                "negativeImpactsReassessed",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are identified potential negative impacts used to inform and implement mitigating measures throughout the AI lifecycle?",
+                "mitigatingMeasuresImplemented",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Have all existing regulations and guidelines that may affect the AI system been identified?",
+                "regulationsIdentified",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+            </div>,
+            false,
+            getSectionCompletion(3).completed,
+            getSectionCompletion(3).total
           )}
 
           {/* Section 4: Safety and Reliability of AI */}
@@ -5011,43 +5384,155 @@ Add disclaimer if many responses are "no" or missing.`,
               )}
             </div>,
             false,
-            userSections[2].fields.filter(
-              (field) => assessmentData[field as keyof AssessmentData]
-            ).length,
-            userSections[2].fields.length
+            getSectionCompletion(4).completed,
+            getSectionCompletion(4).total
           )}
 
           {/* Section 5: Secure and Resilient AI */}
           {renderCollapsibleSection(
             5,
             "Secure and Resilient AI",
-            autoSectionsCompleted.has(5)
-              ? renderCompletedSection(
-                  "This section is intended to assess the measures in place to ensure the security of the AI system and its capability to respond to incidents and operate continuously.",
-                  [
-                    "✓ Mechanisms in place to assess vulnerabilities in terms of security and resiliency across the AI lifecycle",
-                    "✓ Red-team exercises used to actively test the system under adversarial or stress conditions",
-                    "✓ Processes in place to modify system security and countermeasures to increase robustness",
-                    "✓ Processes in place to respond to incidents related to AI systems",
-                    "✓ Procedures and relevant performance metrics in place to monitor AI system's accuracy",
-                    "✓ Processes in place to establish and track security tests and metrics",
-                  ]
-                )
-              : renderIncompleteSection(
-                  "Secure and Resilient AI",
-                  "This section is intended to assess the measures in place to ensure the security of the AI system and its capability to respond to incidents and operate continuously.",
-                  [
-                    "Mechanisms in place to assess vulnerabilities in terms of security and resiliency across the AI lifecycle",
-                    "Red-team exercises used to actively test the system under adversarial or stress conditions",
-                    "Processes in place to modify system security and countermeasures to increase robustness",
-                    "Processes in place to respond to incidents related to AI systems",
-                    "Procedures and relevant performance metrics in place to monitor AI system's accuracy",
-                    "Processes in place to establish and track security tests and metrics",
-                  ]
-                ),
-            autoSectionsCompleted.has(5),
-            autoSectionsCompleted.has(5) ? 6 : 0,
-            6
+            <div className="space-y-6">
+              {renderRadioGroup(
+                "Are mechanisms in place to assess vulnerabilities in terms of security and resiliency across the AI lifecycle?",
+                "vulnerabilityAssessmentMechanisms",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are red-team exercises used to actively test the system under adversarial or stress conditions?",
+                "redTeamExercises",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are processes in place to modify system security and countermeasures to increase robustness?",
+                "securityModificationProcesses",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are processes in place to respond to incidents related to AI systems?",
+                "incidentResponseProcesses",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {autoSectionsCompleted.has(5) ? (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Are procedures and relevant performance metrics in place to
+                    monitor AI system's accuracy?
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="performanceMetrics"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                        checked
+                      />
+                      <span className="text-sm text-gray-500">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="performanceMetrics"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="performanceMetrics"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">N/A</span>
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
+                    This section will be auto-completed once model is evaluated
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Are procedures and relevant performance metrics in place to
+                    monitor AI system's accuracy?
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="performanceMetrics"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="performanceMetrics"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="performanceMetrics"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">N/A</span>
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
+                    This section will be auto-completed once model is evaluated
+                  </div>
+                </div>
+              )}
+
+              {renderRadioGroup(
+                "Are processes in place to establish and track security tests and metrics?",
+                "securityTestsMetrics",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+            </div>,
+            false,
+            getSectionCompletion(5).completed,
+            getSectionCompletion(5).total
           )}
 
           {/* Section 6: Explainable and Interpretable AI */}
@@ -5058,29 +5543,23 @@ Add disclaimer if many responses are "no" or missing.`,
               ? renderCompletedSection(
                   "This section is intended to assess the measures in place to ensure that information requirements for explainable AI are maintained, and AI decisions are interpreted as expected.",
                   [
-                    "✓ Measures in place to address the traceability of the AI system during its entire lifecycle",
-                    "✓ Measures in place to continuously assess the quality of the input data to the AI system",
-                    "✓ Data used by the AI system is traceable to make certain decisions or recommendations",
-                    "✓ AI models or rules are traceable that led to the decisions or recommendations",
-                    "✓ Adequate logging practices in place to record the decisions or recommendations",
-                    "✓ Explanations on the decision of the AI system provided to relevant users and stakeholders",
+                    "✓ Are measures in place to address the traceability of the AI system during its entire lifecycle?",
+                    "✓ Are measures in place to continuously assess the quality of the input data to the AI system?",
+                    "✓ Are explanations on the decision of the AI system provided to relevant users and stakeholders?",
                   ]
                 )
               : renderIncompleteSection(
                   "Explainable and Interpretable AI",
                   "This section is intended to assess the measures in place to ensure that information requirements for explainable AI are maintained, and AI decisions are interpreted as expected.",
                   [
-                    "Measures in place to address the traceability of the AI system during its entire lifecycle",
-                    "Measures in place to continuously assess the quality of the input data to the AI system",
-                    "Data used by the AI system is traceable to make certain decisions or recommendations",
-                    "AI models or rules are traceable that led to the decisions or recommendations",
-                    "Adequate logging practices in place to record the decisions or recommendations",
-                    "Explanations on the decision of the AI system provided to relevant users and stakeholders",
+                    "Are measures in place to address the traceability of the AI system during its entire lifecycle?",
+                    "Are measures in place to continuously assess the quality of the input data to the AI system?",
+                    "Are explanations on the decision of the AI system provided to relevant users and stakeholders?",
                   ]
                 ),
             autoSectionsCompleted.has(6),
-            autoSectionsCompleted.has(6) ? 6 : 0,
-            6
+            autoSectionsCompleted.has(6) ? 3 : 0,
+            3
           )}
 
           {/* Section 7: Privacy and Data Governance */}
@@ -5175,103 +5654,302 @@ Add disclaimer if many responses are "no" or missing.`,
               )}
             </div>,
             false,
-            userSections[3].fields.filter(
-              (field) => assessmentData[field as keyof AssessmentData]
-            ).length,
-            userSections[3].fields.length
+            getSectionCompletion(7).completed,
+            getSectionCompletion(7).total
           )}
 
           {/* Section 8: Fairness and Unbiased AI */}
           {renderCollapsibleSection(
             8,
             "Fairness and Unbiased AI",
-            autoSectionsCompleted.has(8)
-              ? renderCompletedSection(
-                  "This section is intended to assess the measures in place to ensure that the AI system is free from bias, inclusive, and diverse.",
-                  [
-                    "✓ Strategy established to avoid creating or reinforcing unfair bias in the AI system",
-                    "✓ Diversity and representativeness of end-users considered in the data used for the AI system",
-                    "✓ Demographics of those involved in design and development documented to capture potential biases",
-                    "✓ AI actors are aware of the possible bias they can inject into the design and development",
-                    "✓ Mechanisms in place to test and monitor the AI system for potential biases",
-                    "✓ Identified issues related to bias, discrimination, and poor performance are mitigated",
-                  ]
-                )
-              : renderIncompleteSection(
-                  "Fairness and Unbiased AI",
-                  "This section is intended to assess the measures in place to ensure that the AI system is free from bias, inclusive, and diverse.",
-                  [
-                    "Strategy established to avoid creating or reinforcing unfair bias in the AI system",
-                    "Diversity and representativeness of end-users considered in the data used for the AI system",
-                    "Demographics of those involved in design and development documented to capture potential biases",
-                    "AI actors are aware of the possible bias they can inject into the design and development",
-                    "Mechanisms in place to test and monitor the AI system for potential biases",
-                    "Identified issues related to bias, discrimination, and poor performance are mitigated",
-                  ]
-                ),
-            autoSectionsCompleted.has(8),
-            autoSectionsCompleted.has(8) ? 6 : 0,
-            6
+            <div className="space-y-6">
+              {autoSectionsCompleted.has(8) ? (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Is a strategy established to avoid creating or reinforcing
+                    unfair bias in the AI system?
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="strategyEstablished"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                        checked
+                      />
+                      <span className="text-sm text-gray-500">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="strategyEstablished"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="strategyEstablished"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">N/A</span>
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
+                    This section will be auto-completed once model is evaluated
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Is a strategy established to avoid creating or reinforcing
+                    unfair bias in the AI system?
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="strategyEstablished"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="strategyEstablished"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="strategyEstablished"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">N/A</span>
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
+                    This section will be auto-completed once model is evaluated
+                  </div>
+                </div>
+              )}
+
+              {autoSectionsCompleted.has(8) ? (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Is diversity and representativeness of end-users considered
+                    in the data used for the AI system?
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="diversityConsidered"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                        checked
+                      />
+                      <span className="text-sm text-gray-500">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="diversityConsidered"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="diversityConsidered"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">N/A</span>
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
+                    This section will be auto-completed once model is evaluated
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Is diversity and representativeness of end-users considered
+                    in the data used for the AI system?
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="diversityConsidered"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="diversityConsidered"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="diversityConsidered"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled
+                      />
+                      <span className="text-sm text-gray-500">N/A</span>
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
+                    This section will be auto-completed once model is evaluated
+                  </div>
+                </div>
+              )}
+
+              {renderRadioGroup(
+                "Are demographics of those involved in design and development documented to capture potential biases?",
+                "demographicsDocumented",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are AI actors aware of the possible bias they can inject into the design and development?",
+                "aiActorsBiasAwareness",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+            </div>,
+            false,
+            getSectionCompletion(8).completed,
+            getSectionCompletion(8).total
           )}
 
           {/* Section 9: Transparent and Accountable AI */}
           {renderCollapsibleSection(
             9,
             "Transparent and Accountable AI",
-            autoSectionsCompleted.has(9)
-              ? renderCompletedSection(
-                  "This section is intended to assess the measures in place to provide sufficient and appropriate information to relevant stakeholders, at any point of the AI lifecycle.",
-                  [
-                    "✓ Sufficient information provided to relevant AI actors to assist in making informed decisions",
-                    "✓ Type of information accessible about the AI lifecycle is limited to what is relevant and sufficient",
-                    "✓ End users are aware that they are interacting with an AI system and not a human",
-                    "✓ End-users informed of the purpose, criteria, and limitations of the decisions generated",
-                    "✓ End-users informed of the benefits of the AI system",
-                    "✓ Mechanism in place to regularly communicate with external stakeholders",
-                  ]
-                )
-              : renderIncompleteSection(
-                  "Transparent and Accountable AI",
-                  "This section is intended to assess the measures in place to provide sufficient and appropriate information to relevant stakeholders, at any point of the AI lifecycle.",
-                  [
-                    "Sufficient information provided to relevant AI actors to assist in making informed decisions",
-                    "Type of information accessible about the AI lifecycle is limited to what is relevant and sufficient",
-                    "End users are aware that they are interacting with an AI system and not a human",
-                    "End-users informed of the purpose, criteria, and limitations of the decisions generated",
-                    "End-users informed of the benefits of the AI system",
-                    "Mechanism in place to regularly communicate with external stakeholders",
-                  ]
-                ),
-            autoSectionsCompleted.has(9),
-            autoSectionsCompleted.has(9) ? 6 : 0,
-            6
+            <div className="space-y-6">
+              {renderRadioGroup(
+                "Is sufficient information provided to relevant AI actors to assist in making informed decisions?",
+                "sufficientInfoProvided",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are end users aware that they are interacting with an AI system and not a human?",
+                "endUsersAware",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are end-users informed of the purpose, criteria, and limitations of the decisions generated?",
+                "endUsersInformed",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Are end-users informed of the benefits of the AI system?",
+                "endUsersBenefits",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Is a mechanism in place to regularly communicate with external stakeholders?",
+                "externalStakeholders",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+            </div>,
+            false,
+            getSectionCompletion(9).completed,
+            getSectionCompletion(9).total
           )}
 
           {/* Section 10: AI Accountability */}
           {renderCollapsibleSection(
             10,
             "AI Accountability",
-            autoSectionsCompleted.has(10)
-              ? renderCompletedSection(
-                  "This section is intended to ensure that the organization has risk management mechanisms in place to effectively manage identified AI risk.",
-                  [
-                    "✓ Risk management system implemented to address risks identified in the AI system",
-                    "✓ AI system can be audited by independent third parties",
-                    "✓ Checks conducted at appropriate intervals to confirm that the AI system is still trustworthy",
-                  ]
-                )
-              : renderIncompleteSection(
-                  "AI Accountability",
-                  "This section is intended to ensure that the organization has risk management mechanisms in place to effectively manage identified AI risk.",
-                  [
-                    "Risk management system implemented to address risks identified in the AI system",
-                    "AI system can be audited by independent third parties",
-                    "Checks conducted at appropriate intervals to confirm that the AI system is still trustworthy",
-                  ]
-                ),
-            autoSectionsCompleted.has(10),
-            autoSectionsCompleted.has(10) ? 3 : 0,
-            3
+            <div className="space-y-6">
+              {renderRadioGroup(
+                "Is a risk management system implemented to address risks identified in the AI system?",
+                "riskManagementSystem",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+
+              {renderRadioGroup(
+                "Can the AI system be audited by independent third parties?",
+                "aiSystemAuditable",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ]
+              )}
+            </div>,
+            false,
+            getSectionCompletion(10).completed,
+            getSectionCompletion(10).total
           )}
         </div>
 
