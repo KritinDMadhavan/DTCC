@@ -4948,29 +4948,6 @@ Add disclaimer if many responses are "no" or missing.`,
           </div>
           <div className="flex items-center space-x-3">
             <Button
-              onClick={() => {
-                console.log("Current project ID:", id);
-                console.log("Current localStorage key:", `assessment_${id}`);
-                console.log(
-                  "All localStorage keys:",
-                  Object.keys(localStorage)
-                );
-                console.log("Current assessment data:", assessmentData);
-                console.log("Data loaded flag:", dataLoaded);
-              }}
-              variant="outline"
-              className="text-blue-600 border-blue-200 hover:bg-blue-50 text-sm px-3 py-1"
-            >
-              Debug Storage
-            </Button>
-            <Button
-              onClick={loadDataFromStorage}
-              variant="outline"
-              className="text-green-600 border-green-200 hover:bg-green-50 text-sm px-3 py-1"
-            >
-              Reload Data
-            </Button>
-            <Button
               onClick={clearSavedData}
               variant="outline"
               className="text-red-600 border-red-200 hover:bg-red-50 text-sm px-3 py-1"
