@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import {
   CheckCircle,
-  Info,
   FileText,
   ChevronDown,
   ChevronUp,
@@ -19,7 +18,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import axios from "axios";
 import AIEnhancedTextArea from "../components/AIEnhancedTextArea";
-import AITestComponent from "../components/AITestComponent";
 
 interface ModelData {
   model_id: string;
@@ -39,50 +37,85 @@ interface ProjectDetails {
 }
 
 interface AssessmentData {
+  // Questions with ONLY text areas (mandatory)
   aiSystemDescription: string;
   aiSystemPurpose: string;
   deploymentMethod: string;
   deploymentRequirements: string;
+
+  // Questions with radio buttons + optional additional descriptions
   rolesDocumented: string;
   rolesDocumentedDescription: string;
   personnelTrained: string;
   personnelTrainedDescription: string;
   humanInvolvement: string;
+  humanInvolvementDescription: string;
   biasTraining: string;
   biasTrainingDescription: string;
   humanIntervention: string;
+  humanInterventionDescription: string;
   humanOverride: string;
   humanOverrideDescription: string;
   impactAssessmentMechanisms: string;
+  impactAssessmentMechanismsDescription: string;
   negativeImpactsReassessed: string;
+  negativeImpactsReassessedDescription: string;
   mitigatingMeasuresImplemented: string;
+  mitigatingMeasuresImplementedDescription: string;
   regulationsIdentified: string;
+  regulationsIdentifiedDescription: string;
   vulnerabilityAssessmentMechanisms: string;
+  vulnerabilityAssessmentMechanismsDescription: string;
   redTeamExercises: string;
+  redTeamExercisesDescription: string;
   securityModificationProcesses: string;
+  securityModificationProcessesDescription: string;
   incidentResponseProcesses: string;
+  incidentResponseProcessesDescription: string;
   securityTestsMetrics: string;
+  securityTestsMetricsDescription: string;
   demographicsDocumented: string;
+  demographicsDocumentedDescription: string;
   aiActorsBiasAwareness: string;
+  aiActorsBiasAwarenessDescription: string;
   sufficientInfoProvided: string;
+  sufficientInfoProvidedDescription: string;
   endUsersAware: string;
+  endUsersAwareDescription: string;
   endUsersInformed: string;
+  endUsersInformedDescription: string;
   endUsersBenefits: string;
+  endUsersBenefitsDescription: string;
   externalStakeholders: string;
+  externalStakeholdersDescription: string;
   riskManagementSystem: string;
+  riskManagementSystemDescription: string;
   aiSystemAuditable: string;
+  aiSystemAuditableDescription: string;
   riskLevels: string;
+  riskLevelsDescription: string;
   threatsIdentified: string;
+  threatsIdentifiedDescription: string;
   maliciousUseAssessed: string;
+  maliciousUseAssessedDescription: string;
   personalInfoUsed: string;
+  personalInfoUsedDescription: string;
   personalInfoCategories: string;
+  personalInfoCategoriesDescription: string;
   privacyRegulations: string;
+  privacyRegulationsDescription: string;
   privacyRiskAssessment: string;
+  privacyRiskAssessmentDescription: string;
   privacyByDesign: string;
+  privacyByDesignDescription: string;
   individualsInformed: string;
+  individualsInformedDescription: string;
   privacyRights: string;
+  privacyRightsDescription: string;
   dataQuality: string;
+  dataQualityDescription: string;
   thirdPartyRisks: string;
+  thirdPartyRisksDescription: string;
 }
 
 // Add comprehensive analysis framework after the existing interfaces
@@ -128,50 +161,85 @@ const RiskAssessmentPage: React.FC = () => {
   );
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [assessmentData, setAssessmentData] = useState<AssessmentData>({
+    // Questions with ONLY text areas (mandatory)
     aiSystemDescription: "",
     aiSystemPurpose: "",
     deploymentMethod: "",
     deploymentRequirements: "",
+
+    // Questions with radio buttons + optional additional descriptions
     rolesDocumented: "",
     rolesDocumentedDescription: "",
     personnelTrained: "",
     personnelTrainedDescription: "",
     humanInvolvement: "",
+    humanInvolvementDescription: "",
     biasTraining: "",
     biasTrainingDescription: "",
     humanIntervention: "",
+    humanInterventionDescription: "",
     humanOverride: "",
     humanOverrideDescription: "",
     impactAssessmentMechanisms: "",
+    impactAssessmentMechanismsDescription: "",
     negativeImpactsReassessed: "",
+    negativeImpactsReassessedDescription: "",
     mitigatingMeasuresImplemented: "",
+    mitigatingMeasuresImplementedDescription: "",
     regulationsIdentified: "",
+    regulationsIdentifiedDescription: "",
     vulnerabilityAssessmentMechanisms: "",
+    vulnerabilityAssessmentMechanismsDescription: "",
     redTeamExercises: "",
+    redTeamExercisesDescription: "",
     securityModificationProcesses: "",
+    securityModificationProcessesDescription: "",
     incidentResponseProcesses: "",
+    incidentResponseProcessesDescription: "",
     securityTestsMetrics: "",
+    securityTestsMetricsDescription: "",
     demographicsDocumented: "",
+    demographicsDocumentedDescription: "",
     aiActorsBiasAwareness: "",
+    aiActorsBiasAwarenessDescription: "",
     sufficientInfoProvided: "",
+    sufficientInfoProvidedDescription: "",
     endUsersAware: "",
+    endUsersAwareDescription: "",
     endUsersInformed: "",
+    endUsersInformedDescription: "",
     endUsersBenefits: "",
+    endUsersBenefitsDescription: "",
     externalStakeholders: "",
+    externalStakeholdersDescription: "",
     riskManagementSystem: "",
+    riskManagementSystemDescription: "",
     aiSystemAuditable: "",
+    aiSystemAuditableDescription: "",
     riskLevels: "",
+    riskLevelsDescription: "",
     threatsIdentified: "",
+    threatsIdentifiedDescription: "",
     maliciousUseAssessed: "",
+    maliciousUseAssessedDescription: "",
     personalInfoUsed: "",
+    personalInfoUsedDescription: "",
     personalInfoCategories: "",
+    personalInfoCategoriesDescription: "",
     privacyRegulations: "",
+    privacyRegulationsDescription: "",
     privacyRiskAssessment: "",
+    privacyRiskAssessmentDescription: "",
     privacyByDesign: "",
+    privacyByDesignDescription: "",
     individualsInformed: "",
+    individualsInformedDescription: "",
     privacyRights: "",
+    privacyRightsDescription: "",
     dataQuality: "",
+    dataQualityDescription: "",
     thirdPartyRisks: "",
+    thirdPartyRisksDescription: "",
   });
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
@@ -274,50 +342,85 @@ const RiskAssessmentPage: React.FC = () => {
     ) {
       localStorage.removeItem(`assessment_${id}`);
       setAssessmentData({
+        // Questions with ONLY text areas (mandatory)
         aiSystemDescription: "",
         aiSystemPurpose: "",
         deploymentMethod: "",
         deploymentRequirements: "",
+
+        // Questions with radio buttons + optional additional descriptions
         rolesDocumented: "",
         rolesDocumentedDescription: "",
         personnelTrained: "",
         personnelTrainedDescription: "",
         humanInvolvement: "",
+        humanInvolvementDescription: "",
         biasTraining: "",
         biasTrainingDescription: "",
         humanIntervention: "",
+        humanInterventionDescription: "",
         humanOverride: "",
         humanOverrideDescription: "",
         impactAssessmentMechanisms: "",
+        impactAssessmentMechanismsDescription: "",
         negativeImpactsReassessed: "",
+        negativeImpactsReassessedDescription: "",
         mitigatingMeasuresImplemented: "",
+        mitigatingMeasuresImplementedDescription: "",
         regulationsIdentified: "",
+        regulationsIdentifiedDescription: "",
         vulnerabilityAssessmentMechanisms: "",
+        vulnerabilityAssessmentMechanismsDescription: "",
         redTeamExercises: "",
+        redTeamExercisesDescription: "",
         securityModificationProcesses: "",
+        securityModificationProcessesDescription: "",
         incidentResponseProcesses: "",
+        incidentResponseProcessesDescription: "",
         securityTestsMetrics: "",
+        securityTestsMetricsDescription: "",
         demographicsDocumented: "",
+        demographicsDocumentedDescription: "",
         aiActorsBiasAwareness: "",
+        aiActorsBiasAwarenessDescription: "",
         sufficientInfoProvided: "",
+        sufficientInfoProvidedDescription: "",
         endUsersAware: "",
+        endUsersAwareDescription: "",
         endUsersInformed: "",
+        endUsersInformedDescription: "",
         endUsersBenefits: "",
+        endUsersBenefitsDescription: "",
         externalStakeholders: "",
+        externalStakeholdersDescription: "",
         riskManagementSystem: "",
+        riskManagementSystemDescription: "",
         aiSystemAuditable: "",
+        aiSystemAuditableDescription: "",
         riskLevels: "",
+        riskLevelsDescription: "",
         threatsIdentified: "",
+        threatsIdentifiedDescription: "",
         maliciousUseAssessed: "",
+        maliciousUseAssessedDescription: "",
         personalInfoUsed: "",
+        personalInfoUsedDescription: "",
         personalInfoCategories: "",
+        personalInfoCategoriesDescription: "",
         privacyRegulations: "",
+        privacyRegulationsDescription: "",
         privacyRiskAssessment: "",
+        privacyRiskAssessmentDescription: "",
         privacyByDesign: "",
+        privacyByDesignDescription: "",
         individualsInformed: "",
+        individualsInformedDescription: "",
         privacyRights: "",
+        privacyRightsDescription: "",
         dataQuality: "",
+        dataQualityDescription: "",
         thirdPartyRisks: "",
+        thirdPartyRisksDescription: "",
       });
       setLastUpdated(new Date());
       setAutoSectionsCompleted(new Set());
@@ -4099,14 +4202,14 @@ Add disclaimer if many responses are "no" or missing.`,
     label: string,
     field: keyof AssessmentData,
     placeholder: string,
-    tip?: string
+    validationContext?: string
   ) => (
     <AIEnhancedTextArea
       label={label}
       field={field}
       placeholder={placeholder}
-      tip={tip}
       questionContext={`This is a risk assessment question about ${label.toLowerCase()}. Consider compliance requirements, technical accuracy, and industry best practices when providing suggestions or enhancements.`}
+      validationContext={validationContext}
       onValueChange={(value) => handleInputChange(field, value)}
       value={assessmentData[field]}
       rows={4}
@@ -4117,16 +4220,10 @@ Add disclaimer if many responses are "no" or missing.`,
     label: string,
     field: keyof AssessmentData,
     options: { value: string; label: string }[],
-    tip?: string
+    validationContext?: string
   ) => (
     <div className="space-y-3">
       <label className="block text-sm font-medium text-gray-700">{label}</label>
-      {tip && (
-        <div className="flex items-start space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-blue-700">{tip}</p>
-        </div>
-      )}
       <div className="space-y-2">
         {options.map((option) => (
           <label
@@ -4145,49 +4242,25 @@ Add disclaimer if many responses are "no" or missing.`,
           </label>
         ))}
       </div>
-      {(field === "rolesDocumented" ||
-        field === "personnelTrained" ||
-        field === "biasTraining" ||
-        field === "humanOverride") && (
-        <div className="mt-4">
-          <AIEnhancedTextArea
-            label="Additional Description"
-            field={
-              field === "rolesDocumented"
-                ? "rolesDocumentedDescription"
-                : field === "personnelTrained"
-                ? "personnelTrainedDescription"
-                : field === "biasTraining"
-                ? "biasTrainingDescription"
-                : "humanOverrideDescription"
-            }
-            placeholder="Provide additional details or context..."
-            questionContext={`This is an additional description field for ${label.toLowerCase()}. Provide detailed, professional context that supports the main answer.`}
-            onValueChange={(value) =>
-              handleInputChange(
-                field === "rolesDocumented"
-                  ? "rolesDocumentedDescription"
-                  : field === "personnelTrained"
-                  ? "personnelTrainedDescription"
-                  : field === "biasTraining"
-                  ? "biasTrainingDescription"
-                  : "humanOverrideDescription",
-                value
-              )
-            }
-            value={
-              field === "rolesDocumented"
-                ? assessmentData.rolesDocumentedDescription || ""
-                : field === "personnelTrained"
-                ? assessmentData.personnelTrainedDescription || ""
-                : field === "biasTraining"
-                ? assessmentData.biasTrainingDescription || ""
-                : assessmentData.humanOverrideDescription || ""
-            }
-            rows={3}
-          />
-        </div>
-      )}
+      <div className="mt-4">
+        <AIEnhancedTextArea
+          label="Additional Description"
+          field={`${field}Description` as keyof AssessmentData}
+          placeholder="Provide additional details, context, or elaboration..."
+          questionContext={`This is an additional description field for ${label.toLowerCase()}. Provide detailed, professional context that supports the main answer with specific examples, implementation details, or compliance considerations.`}
+          validationContext={validationContext}
+          onValueChange={(value) =>
+            handleInputChange(
+              `${field}Description` as keyof AssessmentData,
+              value
+            )
+          }
+          value={
+            assessmentData[`${field}Description` as keyof AssessmentData] || ""
+          }
+          rows={3}
+        />
+      </div>
     </div>
   );
 
@@ -4302,6 +4375,58 @@ Add disclaimer if many responses are "no" or missing.`,
           (field) => assessmentData[field as keyof AssessmentData]
         ).length,
       0
+    );
+  };
+
+  const isAllQuestionsCompleted = () => {
+    // Check if all main questions (not descriptions) are filled
+    const mainQuestions = [
+      "aiSystemDescription",
+      "aiSystemPurpose",
+      "deploymentMethod",
+      "deploymentRequirements",
+      "rolesDocumented",
+      "personnelTrained",
+      "humanInvolvement",
+      "biasTraining",
+      "humanIntervention",
+      "humanOverride",
+      "impactAssessmentMechanisms",
+      "negativeImpactsReassessed",
+      "mitigatingMeasuresImplemented",
+      "regulationsIdentified",
+      "vulnerabilityAssessmentMechanisms",
+      "redTeamExercises",
+      "securityModificationProcesses",
+      "incidentResponseProcesses",
+      "securityTestsMetrics",
+      "demographicsDocumented",
+      "aiActorsBiasAwareness",
+      "sufficientInfoProvided",
+      "endUsersAware",
+      "endUsersInformed",
+      "endUsersBenefits",
+      "externalStakeholders",
+      "riskManagementSystem",
+      "aiSystemAuditable",
+      "riskLevels",
+      "threatsIdentified",
+      "maliciousUseAssessed",
+      "personalInfoUsed",
+      "personalInfoCategories",
+      "privacyRegulations",
+      "privacyRiskAssessment",
+      "privacyByDesign",
+      "individualsInformed",
+      "privacyRights",
+      "dataQuality",
+      "thirdPartyRisks",
+    ];
+
+    return mainQuestions.every(
+      (question) =>
+        assessmentData[question as keyof AssessmentData] &&
+        assessmentData[question as keyof AssessmentData].trim() !== ""
     );
   };
 
@@ -4953,10 +5078,31 @@ Add disclaimer if many responses are "no" or missing.`,
             <Button
               onClick={clearSavedData}
               variant="outline"
-              className="text-red-600 border-red-200 hover:bg-red-50 text-sm px-3 py-1"
+              className="text-red-600 border-red-200 hover:bg-red-50 px-6 py-3 w-40"
             >
               Reset Progress
             </Button>
+            <div className="relative group">
+              <Button
+                onClick={handleDownloadReport}
+                className={`flex items-center gap-2 px-6 py-3 w-40 ${
+                  isAllQuestionsCompleted() && !loading
+                    ? "bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+                disabled={loading || !isAllQuestionsCompleted()}
+              >
+                <Download className="w-4 h-4" />
+                {loading ? "Generating..." : "Generate Report"}
+              </Button>
+              {!isAllQuestionsCompleted() && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  Please complete the entire questionnaire to generate the
+                  report
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -5145,25 +5291,26 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             1,
             "AI System Information",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderTextArea(
                 "Describe the AI system",
                 "aiSystemDescription",
                 "Briefly provide the basic information of the AI system...",
-                "Briefly provide the basic information of the AI system (e.g., Name of the system and outline of how the system will work.)"
+                "Include system name, domain and context (e.g. credit scoring, fraud detection)."
               )}
 
               {renderTextArea(
                 "What is the purpose of developing the AI system?",
                 "aiSystemPurpose",
                 "Describe how the AI system will address a need...",
-                "Briefly describe how the AI system will address a need that aligns with the objective of the organization."
+                "E.g., loan approval model, fraud detection tool, customer support chatbot."
               )}
 
               {renderTextArea(
                 "How will the system be deployed for its intended uses?",
                 "deploymentMethod",
-                "Describe the deployment strategy..."
+                "Describe the deployment strategy...",
+                "E.g., cloud vs on-premises deployment, integration with banking systems."
               )}
 
               {renderRadioGroup(
@@ -5172,7 +5319,8 @@ Add disclaimer if many responses are "no" or missing.`,
                 [
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
-                ]
+                ],
+                "Check for regulatory/operational requirements (e.g., SOC2, PCI-DSS for fintech)."
               )}
             </div>,
             false,
@@ -5184,7 +5332,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             2,
             "Human and Stakeholder Involvement",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderRadioGroup(
                 "Have the roles and responsibilities of personnel involved in the design, development, deployment, assessment, and monitoring of the AI system been defined and documented?",
                 "rolesDocumented",
@@ -5193,7 +5341,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
                 ],
-                "Include a brief description of each stakeholder's role in the AI lifecycle or link to relevant documentation."
+                "[ENTER YOUR VALIDATION CONTEXT HERE]"
               )}
 
               {renderRadioGroup(
@@ -5207,7 +5355,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "[ENTER YOUR VALIDATION CONTEXT HERE]"
               )}
 
               {renderRadioGroup(
@@ -5230,7 +5379,8 @@ Add disclaimer if many responses are "no" or missing.`,
                     value: "human-command",
                     label: "Overseen by a Human-in-Command",
                   },
-                ]
+                ],
+                "[ENTER YOUR VALIDATION CONTEXT HERE]"
               )}
 
               {renderRadioGroup(
@@ -5244,7 +5394,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "[ENTER YOUR VALIDATION CONTEXT HERE]"
               )}
 
               {renderRadioGroup(
@@ -5254,8 +5405,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ],
-                "There are a number of cases and scenarios where human intervention is needed to ensure the safe, ethical, and secure use of AI."
+                ]
               )}
 
               {renderRadioGroup(
@@ -5281,7 +5431,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             3,
             "Valid and Reliable AI",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderRadioGroup(
                 "Are mechanisms in place to identify and assess the impacts of the AI system on individuals, the environment, communities, and society?",
                 "impactAssessmentMechanisms",
@@ -5331,7 +5481,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             4,
             "Safety and Reliability of AI",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderRadioGroup(
                 "Are tolerable risk levels defined for the AI system based on the business objectives, regulatory compliance, and data sensitivity requirements of the system?",
                 "riskLevels",
@@ -5339,8 +5489,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ],
-                "AI risk tolerance level refers to the extent to which individuals, organizations, or societies are willing to accept or tolerate potential risks associated with the AI system."
+                ]
               )}
 
               {renderRadioGroup(
@@ -5372,7 +5521,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             5,
             "Secure and Resilient AI",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderRadioGroup(
                 "Are mechanisms in place to assess vulnerabilities in terms of security and resiliency across the AI lifecycle?",
                 "vulnerabilityAssessmentMechanisms",
@@ -5546,7 +5695,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             7,
             "Privacy and Data Governance",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderRadioGroup(
                 "Is the AI system being trained, or was it developed, by using or processing personal information?",
                 "personalInfoUsed",
@@ -5642,7 +5791,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             8,
             "Fairness and Unbiased AI",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {autoSectionsCompleted.has(8) ? (
                 <div className="space-y-3">
                   <label className="block text-sm font-medium text-gray-700">
@@ -5846,7 +5995,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             9,
             "Transparent and Accountable AI",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderRadioGroup(
                 "Is sufficient information provided to relevant AI actors to assist in making informed decisions?",
                 "sufficientInfoProvided",
@@ -5906,7 +6055,7 @@ Add disclaimer if many responses are "no" or missing.`,
           {renderCollapsibleSection(
             10,
             "AI Accountability",
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               {renderRadioGroup(
                 "Is a risk management system implemented to address risks identified in the AI system?",
                 "riskManagementSystem",
@@ -5933,21 +6082,28 @@ Add disclaimer if many responses are "no" or missing.`,
           )}
         </div>
 
-        {/* AI Test Component - Remove after testing */}
-        <div className="mt-8 mb-8">
-          <AITestComponent />
-        </div>
-
         {/* Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            onClick={handleDownloadReport}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white"
-            disabled={loading}
-          >
-            <Download className="w-4 h-4" />
-            {loading ? "Generating..." : "Generate & Save to Storage"}
-          </Button>
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-end">
+          <div className="relative group">
+            <Button
+              onClick={handleDownloadReport}
+              className={`flex items-center gap-2 px-6 py-3 ${
+                isAllQuestionsCompleted() && !loading
+                  ? "bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+              disabled={loading || !isAllQuestionsCompleted()}
+            >
+              <Download className="w-4 h-4" />
+              {loading ? "Generating..." : "Generate Risk Assessment Report"}
+            </Button>
+            {!isAllQuestionsCompleted() && (
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                Please complete the entire questionnaire to generate the report
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
