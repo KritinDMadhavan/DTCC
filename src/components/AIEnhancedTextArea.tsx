@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Wand2, Sparkles, Copy, Check } from "lucide-react";
+import { Wand2, Sparkles, Copy, X, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { aiRiskAssessmentService } from "../services/AIRiskAssessmentService";
 import type {
@@ -35,6 +35,9 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
 
   const [lastEnhancement, setLastEnhancement] = useState<string>("");
   const [canUndo, setCanUndo] = useState(false);
+  const [showChatPopup, setShowChatPopup] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [isGeneratingFromChat, setIsGeneratingFromChat] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-hide suggestions when clicking outside
@@ -53,7 +56,10 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
   }, []);
 
   const handleEnhance = async () => {
-    if (!value.trim()) return;
+    if (!value.trim()) {
+      setShowChatPopup(true);
+      return;
+    }
 
     setIsEnhancing(true);
     try {
@@ -127,6 +133,38 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
     }
   };
 
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    setIsGeneratingFromChat(true);
+    try {
+      const enhancedContext = validationContext
+        ? `${questionContext}\n\nVALIDATION REQUIREMENTS: ${validationContext}\n\nUSER ADDITIONAL INFORMATION: ${chatInput}\n\nGenerate a comprehensive response based on the user's additional information.`
+        : `${questionContext}\n\nUSER ADDITIONAL INFORMATION: ${chatInput}\n\nGenerate a comprehensive response based on the user's additional information.`;
+
+      const response = await aiRiskAssessmentService.enhanceAnswer({
+        question: label,
+        hints: enhancedContext,
+        user_input: chatInput,
+        enhancement_style: "professional",
+      });
+
+      onValueChange(response.enhanced_text);
+      setShowChatPopup(false);
+      setChatInput("");
+    } catch (error) {
+      console.error("Error generating from chat:", error);
+    } finally {
+      setIsGeneratingFromChat(false);
+    }
+  };
+
+  const handleCloseChat = () => {
+    setShowChatPopup(false);
+    setChatInput("");
+  };
+
   return (
     <div className="space-y-2 relative">
       <label className="block text-sm font-medium text-gray-700">{label}</label>
@@ -145,7 +183,7 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
           {/* Enhance Button */}
           <button
             onClick={handleEnhance}
-            disabled={isEnhancing || !value.trim()}
+            disabled={isEnhancing}
             className="p-1.5 bg-teal-500 hover:bg-teal-600 disabled:bg-gray-300 text-white rounded transition-colors"
             title="Enhance with AI"
           >
@@ -222,6 +260,99 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
                 </div>
               ))}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat Popup for Empty Fields */}
+      <AnimatePresence>
+        {showChatPopup && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={handleCloseChat}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Generate AI Text
+                </h3>
+                <button
+                  onClick={handleCloseChat}
+                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Question Context */}
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">Question:</p>
+                <p className="text-sm font-medium text-gray-900">{label}</p>
+                {validationContext && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-xs text-blue-700">
+                      <strong>Required:</strong> {validationContext}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Input */}
+              <form onSubmit={handleChatSubmit} className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Provide additional information:
+                  </label>
+                  <textarea
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Tell me more about your AI system, requirements, context, etc..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+                    rows={3}
+                    disabled={isGeneratingFromChat}
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleCloseChat}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    disabled={isGeneratingFromChat}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!chatInput.trim() || isGeneratingFromChat}
+                    className="px-4 py-2 bg-teal-500 hover:bg-teal-600 disabled:bg-gray-300 text-white rounded-lg transition-colors flex items-center space-x-2"
+                  >
+                    {isGeneratingFromChat ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Generate</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
