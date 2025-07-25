@@ -5341,7 +5341,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
                 ],
-                "[ENTER YOUR VALIDATION CONTEXT HERE]"
+                "Include data scientists, risk/compliance officers, model owners, business owners."
               )}
 
               {renderRadioGroup(
@@ -5356,7 +5356,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
                 ],
-                "[ENTER YOUR VALIDATION CONTEXT HERE]"
+                "E.g., ML governance, model fairness and security training for staff."
               )}
 
               {renderRadioGroup(
@@ -5380,7 +5380,7 @@ Add disclaimer if many responses are "no" or missing.`,
                     label: "Overseen by a Human-in-Command",
                   },
                 ],
-                "[ENTER YOUR VALIDATION CONTEXT HERE]"
+                "Define human-in-the-loop vs fully automated paths (e.g. manual override in credit decisions)."
               )}
 
               {renderRadioGroup(
@@ -5395,7 +5395,7 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
                 ],
-                "[ENTER YOUR VALIDATION CONTEXT HERE]"
+                "Ensure domain expertise and bias awareness (e.g. statisticians, ethicists on team)."
               )}
 
               {renderRadioGroup(
@@ -5405,7 +5405,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "E.g., manual review for flagged transactions or model errors."
               )}
 
               {renderRadioGroup(
@@ -5419,7 +5420,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "E.g., credit committee or compliance officer can reverse an AI-based loan decision."
               )}
             </div>,
             false,
@@ -5439,7 +5441,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Perform hazard analysis for bias/harm (e.g. unfair loan denials, fraud misclassification)."
               )}
 
               {renderRadioGroup(
@@ -5449,7 +5452,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Re-evaluate risks after model updates or new features."
               )}
 
               {renderRadioGroup(
@@ -5459,7 +5463,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Track corrective actions (e.g. bias mitigation, additional guardrails implemented)."
               )}
 
               {renderRadioGroup(
@@ -5469,7 +5474,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Consider GDPR/CCPA, GLBA, financial regulations (e.g. fair lending laws)."
               )}
             </div>,
             false,
@@ -5489,7 +5495,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Define thresholds (e.g. max allowed fraud false positives in detection model)."
               )}
 
               {renderRadioGroup(
@@ -5499,7 +5506,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Include AI-specific threats (data poisoning, model inversion, system failures)."
               )}
 
               {renderRadioGroup(
@@ -5509,7 +5517,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "E.g. risk of insiders manipulating AI outputs for financial gain."
               )}
             </div>,
             false,
@@ -5529,7 +5538,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Penetration tests, adversarial robustness checks (e.g., perturbation attacks)."
               )}
 
               {renderRadioGroup(
@@ -5539,7 +5549,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Simulate real-world attacks (fraud attempts, data poisoning) on the model and data pipeline."
               )}
 
               {renderRadioGroup(
@@ -5549,7 +5560,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Ensure regular updates of defense measures (e.g., adversarial retraining)."
               )}
 
               {renderRadioGroup(
@@ -5559,7 +5571,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Ensure regular updates of defense measures (e.g., adversarial retraining)."
               )}
 
               {autoSectionsCompleted.has(5) ? (
@@ -5656,7 +5669,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Log vulnerability scan results and track remediation progress."
               )}
             </div>,
             false,
@@ -5702,7 +5716,8 @@ Add disclaimer if many responses are "no" or missing.`,
                 [
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
-                ]
+                ],
+                "Detect use of sensitive data (e.g. SSNs, health records) in training sets."
               )}
 
               {renderTextArea(
@@ -5719,7 +5734,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Document data categories (e.g. identity, financial, health) and consent/contractual basis."
               )}
 
               {renderRadioGroup(
@@ -5729,7 +5745,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Conduct DPIA to evaluate risks and safeguards."
               )}
 
               {renderRadioGroup(
@@ -5739,7 +5756,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Ensure encryption, anonymization, data minimization in system design."
               )}
 
               {renderRadioGroup(
@@ -5749,7 +5767,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Include AI data use in customer communications or terms of service."
               )}
 
               {renderRadioGroup(
@@ -5759,7 +5778,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Provide processes for access, correction, and deletion of data."
               )}
 
               {renderRadioGroup(
@@ -5769,7 +5789,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "E.g. automated alerts when data distribution shifts or becomes stale."
               )}
 
               {renderRadioGroup(
@@ -5779,7 +5800,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes " },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Third-party due diligence for data quality and bias."
               )}
             </div>,
             false,
@@ -5973,7 +5995,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Encourage a diverse development team to reduce blind spots."
               )}
 
               {renderRadioGroup(
@@ -5983,7 +6006,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Regular bias/ethics training for all stakeholders (developers, product owners)."
               )}
             </div>,
             false,
@@ -6003,7 +6027,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Governance dashboards and risk reports for internal teams."
               )}
 
               {renderRadioGroup(
@@ -6013,7 +6038,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Include labels or disclosures (e.g. `Powered by AI`) in the user interface."
               )}
 
               {renderRadioGroup(
@@ -6023,7 +6049,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Provide clear explanations or disclaimers about how decisions are made."
               )}
 
               {renderRadioGroup(
@@ -6033,7 +6060,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Communicate how AI assists (e.g. faster loan processing, improved fraud detection)."
               )}
 
               {renderRadioGroup(
@@ -6043,7 +6071,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Support channels or periodic review meetings with customers and regulators."
               )}
             </div>,
             false,
@@ -6063,7 +6092,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "AI risk register within enterprise risk management."
               )}
 
               {renderRadioGroup(
@@ -6073,7 +6103,8 @@ Add disclaimer if many responses are "no" or missing.`,
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
-                ]
+                ],
+                "Ensure external access to logs/models and documentation for audits."
               )}
             </div>,
             false,
