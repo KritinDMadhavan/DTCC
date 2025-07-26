@@ -443,6 +443,8 @@ const ProjectOverviewPage: React.FC = () => {
         .eq("project_id", id)
         .single();
 
+        console.log(data);
+
       if (error) throw error;
       setProject(data);
       setModelUploaded(true);

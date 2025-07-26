@@ -1264,11 +1264,12 @@ const PerformancePage: React.FC = () => {
         if (error) {
           throw error;
         }
+        console.log("hellllllllllllllll");
         console.log("data", data);
 
         setModels(data || []);
         console.log("projectid", id);
-
+        console.log("data", data);
         // If we have models for this project, fetch performance data
         if (data && data.length > 0) {
           const modelId = data[0].model_id;
@@ -1277,6 +1278,9 @@ const PerformancePage: React.FC = () => {
           // Use the first model
 
           try {
+            console.log("projectId", projectId);
+            console.log("modelId", modelId);
+            console.log("model_version", model_version);
             // Call the performance API with project_id and model_id and include the auth token
             const response = await fetch(
               `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/performance/${projectId}/${modelId}/${model_version}`,
