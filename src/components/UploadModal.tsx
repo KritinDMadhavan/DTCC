@@ -35,7 +35,6 @@ const UploadModal = ({
     dataset_type: "",
     reportGenerated: false,
     projectId: projectId || "", // Provide a default value
-    business_function: "",
     framework: "",
     external_dependencies: "",
     requirements_file: null as File | null,
@@ -270,7 +269,7 @@ const UploadModal = ({
         setFormData((prev) => ({ ...prev, file: selectedGitHubFile }));
       } else {
         // Validate required fields for step 1 (browser upload)
-        if (!formData.name || !formData.model_type || !formData.file || !formData.business_function || !formData.framework || !formData.model_stage) {
+        if (!formData.name || !formData.model_type || !formData.file || !formData.framework || !formData.model_stage) {
           setStepError("Please fill all required fields");
           return;
         }
@@ -326,7 +325,7 @@ const UploadModal = ({
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.model_type || !formData.file || !formData.business_function || !formData.framework || !formData.model_stage) {
+      if (!formData.name || !formData.model_type || !formData.file || !formData.framework || !formData.model_stage) {
         throw new Error("Please fill all required model fields");
       }
 
@@ -396,7 +395,6 @@ const UploadModal = ({
       modelFormData.append("model_type", formData.model_type);
       modelFormData.append("version", formData.version);
       modelFormData.append("file", fileToUpload);
-      modelFormData.append("business_function", formData.business_function);
       modelFormData.append("framework", formData.framework);
       modelFormData.append("model_stage", formData.model_stage);
       if (formData.description) {
@@ -605,10 +603,7 @@ const UploadModal = ({
           model_id: modelId,
           project_id: p_id,
           dataset_id: datasetId,
-          validation_dataset_id: validationDatasetId,
-          production_dataset_id: productionDatasetId,
           model_version: formData.version,
-          drift_analysis_enabled: formData.enable_drift_analysis,
         });
 
       if (supabaseError) {
@@ -698,12 +693,12 @@ const UploadModal = ({
         auditResults.push({ type: "explainability", status: "error" });
       }
 
-      // 4. Drift Analysis
-      if (formData.enable_drift_analysis && productionDatasetId) {
+      // 4. Drift Analysis - Only run if production dataset was actually uploaded
+      if (formData.enable_drift_analysis && formData.production_dataset && productionDatasetId) {
         try {
           console.log("Step 3.4: Running Drift Analysis with production data...");
           const driftResponse = await fetch(
-            `${baseUrl}/ml/${p_id}/audit/drift?model_id=${modelId}&dataset_id=${datasetId}&production_dataset_id=${productionDatasetId}`,
+            `${baseUrl}/ml/${p_id}/audit/drift?model_id=${modelId}&dataset_id=${productionDatasetId}`,
             {
               method: "POST",
               headers: {
@@ -722,13 +717,16 @@ const UploadModal = ({
           console.error("Error in Drift Analysis:", error);
           auditResults.push({ type: "drift", status: "error" });
         }
-      } else {
-        console.log("Step 3.4: Skipping Drift Analysis - not enabled or no production data");
+      } else if (formData.enable_drift_analysis && !formData.production_dataset) {
+        console.log("Step 3.4: Skipping Drift Analysis - enabled but no production dataset uploaded");
         auditResults.push({ 
           type: "drift", 
           status: "skipped", 
-          message: "Drift analysis not enabled or no production data provided" 
+          message: "Drift analysis enabled but no production dataset was uploaded" 
         });
+      } else {
+        console.log("Step 3.4: Skipping Drift Analysis - not enabled");
+        // Don't add to auditResults if drift analysis is not enabled at all
       }
 
       // Combine results and continue
@@ -1518,55 +1516,6 @@ const UploadModal = ({
                     </select>
                   </div>
 
-                  {/* Business Function */}
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
-                    <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
-                      Business Function <span className="text-red-500 ml-2">*</span>
-                      <div className="relative ml-2 group">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-56 bg-gray-800 text-white text-xs rounded-lg py-2 px-3 hidden group-hover:block z-10">
-                          What business problem does this model solve?
-                        </div>
-                      </div>
-                    </label>
-                    <select
-                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white text-lg"
-                      value={formData.business_function || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, business_function: e.target.value })
-                      }
-                      required
-                    >
-                      <option value="" disabled>
-                        Select business function
-                      </option>
-                      <option value="fraud_detection">Fraud Detection</option>
-                      <option value="risk_assessment">Risk Assessment</option>
-                      <option value="customer_segmentation">Customer Segmentation</option>
-                      <option value="demand_forecasting">Demand Forecasting</option>
-                      <option value="sentiment_analysis">Sentiment Analysis</option>
-                      <option value="recommendation_engine">Recommendation Engine</option>
-                      <option value="price_optimization">Price Optimization</option>
-                      <option value="churn_prediction">Churn Prediction</option>
-                      <option value="quality_control">Quality Control</option>
-                      <option value="predictive_maintenance">Predictive Maintenance</option>
-                      <option value="credit_scoring">Credit Scoring</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1607,16 +1556,9 @@ const UploadModal = ({
                       </option>
                       <option value="scikit-learn">Scikit-learn</option>
                       <option value="tensorflow">TensorFlow</option>
-                      <option value="pytorch">PyTorch</option>
                       <option value="keras">Keras</option>
-                      <option value="xgboost">XGBoost</option>
-                      <option value="lightgbm">LightGBM</option>
-                      <option value="catboost">CatBoost</option>
-                      <option value="huggingface">Hugging Face</option>
-                      <option value="spacy">spaCy</option>
-                      <option value="statsmodels">Statsmodels</option>
-                      <option value="prophet">Prophet</option>
-                      <option value="other">Other</option>
+                      <option value="pytorch">PyTorch</option>
+                      <option value="onnx">ONNX</option>
                     </select>
                   </div>
 
@@ -1667,53 +1609,19 @@ const UploadModal = ({
                   </div>
                 </div>
 
-                {/* External Dependencies - Full Width */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
-                  <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
-                    External Dependencies
-                    <span className="ml-3 text-sm font-normal text-gray-500">(Optional)</span>
-                    <div className="relative ml-2 group">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
+                {/* External Dependencies - Testing Coming Soon */}
+                <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 relative overflow-hidden">
+                  <div className="absolute top-3 right-3">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                       </svg>
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-64 bg-gray-800 text-white text-xs rounded-lg py-2 px-3 hidden group-hover:block z-10">
-                        List any external dependencies like tokenizers, embeddings, or APIs
-                      </div>
-                    </div>
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="e.g., BERT tokenizer, Word2Vec embeddings, external APIs, etc."
-                    className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg resize-none"
-                    value={formData.external_dependencies}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        external_dependencies: e.target.value,
-                      })
-                    }
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    Describe any external dependencies or special requirements
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Requirements File */}
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+                      Testing Coming Soon
+                    </span>
+                  </div>
+                  <div className="opacity-50 pointer-events-none">
                     <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
-                      Environment Configuration
+                      External Dependencies
                       <span className="ml-3 text-sm font-normal text-gray-500">(Optional)</span>
                       <div className="relative ml-2 group">
                         <svg
@@ -1730,51 +1638,73 @@ const UploadModal = ({
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-64 bg-gray-800 text-white text-xs rounded-lg py-2 px-3 hidden group-hover:block z-10">
-                          Upload requirements.txt or Dockerfile if special environment is needed
-                        </div>
                       </div>
                     </label>
-                    <p className="text-sm text-gray-500 mb-4">Upload requirements.txt or Dockerfile</p>
+                    <textarea
+                      rows={3}
+                      placeholder="e.g., BERT tokenizer, Word2Vec embeddings, external APIs, etc."
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg resize-none bg-gray-50"
+                      disabled
+                    />
+                    <p className="text-sm text-gray-500 mt-2">
+                      Describe any external dependencies or special requirements
+                    </p>
+                  </div>
+                  <div className="absolute inset-0 bg-gray-200 bg-opacity-10 flex items-center justify-center">
+                    <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                      <span className="text-gray-600 font-medium">External Dependencies - Testing Coming Soon</span>
+                    </div>
+                  </div>
+                </div>
 
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
-                      <input
-                        type="file"
-                        id="requirements"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload(e, "requirements_file")}
-                        accept=".txt,.dockerfile,Dockerfile"
-                      />
-                      <label
-                        htmlFor="requirements"
-                        className="cursor-pointer w-full h-full flex flex-col items-center"
-                      >
-                        <div className="text-blue-500 text-4xl mb-3">
-                          {formData.requirements_file ? "📋" : "⬆️"}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Environment Configuration - Testing Coming Soon */}
+                  <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 relative overflow-hidden">
+                    <div className="absolute top-3 right-3">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                        Testing Coming Soon
+                      </span>
+                    </div>
+                    <div className="opacity-50 pointer-events-none">
+                      <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
+                        Environment Configuration
+                        <span className="ml-3 text-sm font-normal text-gray-500">(Optional)</span>
+                        <div className="relative ml-2 group">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
                         </div>
+                      </label>
+                      <p className="text-sm text-gray-500 mb-4">Upload requirements.txt or Dockerfile</p>
+
+                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center bg-gray-50">
+                        <div className="text-blue-500 text-4xl mb-3">⬆️</div>
                         <p className="text-gray-700 font-medium mb-2 text-lg">
-                          {formData.requirements_file
-                            ? "Change environment file"
-                            : "Upload environment configuration"}
+                          Upload environment configuration
                         </p>
                         <p className="text-gray-500">
-                          {formData.requirements_file
-                            ? formData.requirements_file.name
-                            : "requirements.txt, Dockerfile, or similar"}
+                          requirements.txt, Dockerfile, or similar
                         </p>
-                        {formData.requirements_file && (
-                          <span className="mt-3 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 text-sm rounded-full font-medium">
-                            <svg
-                              className="h-3 w-3 mr-2"
-                              fill="currentColor"
-                              viewBox="0 0 8 8"
-                            >
-                              <circle cx="4" cy="4" r="3" />
-                            </svg>
-                            Environment file selected
-                          </span>
-                        )}
-                      </label>
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 bg-gray-200 bg-opacity-10 flex items-center justify-center">
+                      <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                        <span className="text-gray-600 font-medium">Environment Configuration - Testing Coming Soon</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1914,54 +1844,40 @@ const UploadModal = ({
                       </div>
                     </div>
 
-                    {/* Validation Dataset - only show for certain model stages */}
+                    {/* Validation Dataset - Testing Coming Soon */}
                     {(formData.model_stage === "in_training" || formData.model_stage === "post_training" || formData.model_stage === "experimental") && (
                       <div className="space-y-6">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
-                          <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
-                            Validation Dataset{" "}
-                            <span className="ml-2 text-sm font-normal text-gray-500">(Optional but recommended)</span>
-                          </label>
-                          <p className="text-sm text-gray-500 mb-4">
-                            Upload validation dataset used to evaluate model performance
-                          </p>
-                          <div className="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
-                            <input
-                              type="file"
-                              id="validation_dataset"
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(e, "validation_dataset")}
-                            />
-                            <label
-                              htmlFor="validation_dataset"
-                              className="cursor-pointer w-full h-full flex flex-col items-center"
-                            >
-                              <div className="text-green-500 text-5xl mb-4">
-                                {formData.validation_dataset ? "📈" : "⬆️"}
-                              </div>
+                        <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 relative overflow-hidden">
+                          <div className="absolute top-3 right-3">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                              </svg>
+                              Testing Coming Soon
+                            </span>
+                          </div>
+                          <div className="opacity-50 pointer-events-none">
+                            <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
+                              Validation Dataset{" "}
+                              <span className="ml-2 text-sm font-normal text-gray-500">(Optional but recommended)</span>
+                            </label>
+                            <p className="text-sm text-gray-500 mb-4">
+                              Upload validation dataset used to evaluate model performance
+                            </p>
+                            <div className="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center bg-gray-50">
+                              <div className="text-green-500 text-5xl mb-4">⬆️</div>
                               <p className="text-gray-700 font-medium mb-2 text-lg">
-                                {formData.validation_dataset
-                                  ? "Change validation dataset"
-                                  : "Upload validation dataset"}
+                                Upload validation dataset
                               </p>
                               <p className="text-gray-500">
-                                {formData.validation_dataset
-                                  ? formData.validation_dataset.name
-                                  : "Click or drag validation data file here"}
+                                Click or drag validation data file here
                               </p>
-                              {formData.validation_dataset && (
-                                <span className="mt-4 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 text-sm rounded-full font-medium">
-                                  <svg
-                                    className="h-3 w-3 mr-2"
-                                    fill="currentColor"
-                                    viewBox="0 0 8 8"
-                                  >
-                                    <circle cx="4" cy="4" r="3" />
-                                  </svg>
-                                  Validation dataset selected
-                                </span>
-                              )}
-                            </label>
+                            </div>
+                          </div>
+                          <div className="absolute inset-0 bg-gray-200 bg-opacity-10 flex items-center justify-center">
+                            <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+                              <span className="text-gray-600 font-medium">Validation Dataset Upload - Testing Coming Soon</span>
+                            </div>
                           </div>
                         </div>
 
@@ -2519,7 +2435,7 @@ const UploadModal = ({
                         
                         {validationDatasetColumns.length <= 10 ? (
                           <select
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white"
+                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white text-lg"
                             value={formData.validation_target_column || ""}
                             onChange={(e) =>
                               setFormData({
@@ -2624,56 +2540,54 @@ const UploadModal = ({
                   </p>
                 </div>
 
-                {/* Drift Analysis Enable/Disable */}
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-8 rounded-2xl border border-purple-200">
-                  <div className="flex items-center mb-6">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="h-12 w-12 text-purple-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                        />
+                {/* Drift Analysis - Testing Coming Soon */}
+                <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-8 rounded-2xl border-2 border-dashed border-gray-300 relative overflow-hidden">
+                  <div className="absolute top-4 right-4">
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                       </svg>
-                    </div>
-                    <div className="ml-6">
-                      <h6 className="text-2xl font-medium text-purple-800 mb-2">
-                        Enable Drift Analysis?
-                      </h6>
-                      <p className="text-purple-700 text-lg">
-                        Drift analysis helps monitor how your model's predictions change over time compared to training data.
-                      </p>
-                    </div>
+                      Testing Coming Soon
+                    </span>
                   </div>
+                  <div className="opacity-50 pointer-events-none">
+                    <div className="flex items-center mb-6">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-12 w-12 text-purple-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-6">
+                        <h6 className="text-2xl font-medium text-purple-800 mb-2">
+                          Enable Drift Analysis?
+                        </h6>
+                        <p className="text-purple-700 text-lg">
+                          Drift analysis helps monitor how your model's predictions change over time compared to training data.
+                        </p>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center mb-6">
-                    <input
-                      type="checkbox"
-                      id="enable_drift_analysis"
-                      checked={formData.enable_drift_analysis}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          enable_drift_analysis: e.target.checked,
-                        })
-                      }
-                      className="h-6 w-6 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
-                    />
-                    <label
-                      htmlFor="enable_drift_analysis"
-                      className="ml-4 text-purple-800 font-medium text-lg"
-                    >
-                      Yes, I want to enable drift analysis for this model
-                    </label>
-                  </div>
+                    <div className="flex items-center mb-6">
+                      <input
+                        type="checkbox"
+                        disabled
+                        className="h-6 w-6 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
+                      />
+                      <label className="ml-4 text-purple-800 font-medium text-lg">
+                        Yes, I want to enable drift analysis for this model
+                      </label>
+                    </div>
 
-                  {!formData.enable_drift_analysis && (
                     <div className="mt-6 p-6 bg-yellow-50 border border-yellow-200 rounded-xl">
                       <div className="flex items-start">
                         <svg
@@ -2697,7 +2611,12 @@ const UploadModal = ({
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
+                  <div className="absolute inset-0 bg-gray-200 bg-opacity-10 flex items-center justify-center">
+                    <div className="bg-white px-6 py-3 rounded-lg shadow-sm border border-gray-200">
+                      <span className="text-gray-600 font-medium text-lg">Drift Analysis Configuration - Testing Coming Soon</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Production Dataset Upload - Only show if drift analysis is enabled */}
@@ -2957,14 +2876,7 @@ const UploadModal = ({
                         {formData.version || "Not provided"}
                       </p>
                     </div>
-                    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-100">
-                      <p className="text-sm font-medium text-gray-500 mb-2">
-                        Business Function
-                      </p>
-                      <p className="text-gray-800 font-semibold text-lg">
-                        {formData.business_function || "Not provided"}
-                      </p>
-                    </div>
+
                     <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-100">
                       <p className="text-sm font-medium text-gray-500 mb-2">
                         Framework
