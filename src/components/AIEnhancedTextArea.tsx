@@ -18,11 +18,13 @@ interface ChatMessage {
   type: "user" | "ai";
   content: string;
   timestamp: Date;
+  suggestions?: string[];
+  choices?: { label: string; value: string }[];
 }
 
 const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
   label,
-  field,
+  field: _field,
   placeholder,
   questionContext,
   validationContext,
@@ -40,35 +42,116 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
   const [currentGeneratedText, setCurrentGeneratedText] = useState("");
   const textareaRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Only close popup if click is outside both textarea and popup
+      // Only close popup if click is outside both textarea and popup, and not on the enhance button
       const target = event.target as Node;
       const isInsideTextarea = textareaRef.current?.contains(target);
       const isInsidePopup = document
         .querySelector(".chat-popup")
         ?.contains(target);
 
-      if (!isInsideTextarea && !isInsidePopup) {
-        setShowChatPopup(false);
+      // Don't close if clicking on the enhance button or textarea
+      const isEnhanceButton = (target as Element)?.closest?.(
+        'button[title="Enhance with AI"]'
+      );
+
+      if (
+        !isInsideTextarea &&
+        !isInsidePopup &&
+        !isEnhanceButton &&
+        showChatPopup
+      ) {
+        // Only close after a delay to allow for intentional interactions
+        setTimeout(() => {
+          setShowChatPopup(false);
+        }, 100);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    if (showChatPopup) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showChatPopup]);
 
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop =
-        chatContainerRef.current.scrollHeight;
+    if (chatContainerRef.current && chatMessages.length > 0) {
+      // Small delay to ensure content is rendered
+      setTimeout(() => {
+        if (chatContainerRef.current) {
+          const lastMessage = chatMessages[chatMessages.length - 1];
+
+          // If the last message is from AI, scroll to show the start of that message
+          if (lastMessage.type === "ai") {
+            // Find the last AI message element
+            const messageElements = chatContainerRef.current.querySelectorAll(
+              "[data-message-index]"
+            );
+            const lastMessageElement =
+              messageElements[messageElements.length - 1];
+
+            if (lastMessageElement) {
+              // Scroll to show the top of the AI message
+              const containerRect =
+                chatContainerRef.current.getBoundingClientRect();
+              const messageRect = lastMessageElement.getBoundingClientRect();
+              const scrollTop =
+                chatContainerRef.current.scrollTop +
+                (messageRect.top - containerRect.top) -
+                20; // 20px offset from top
+
+              chatContainerRef.current.scrollTo({
+                top: scrollTop,
+                behavior: "smooth",
+              });
+            }
+          } else {
+            // For user messages, scroll to bottom as usual
+            chatContainerRef.current.scrollTo({
+              top: chatContainerRef.current.scrollHeight,
+              behavior: "smooth",
+            });
+          }
+        }
+      }, 100);
     }
   }, [chatMessages]);
+
+  // Initialize chat with AI greeting when popup opens
+  const initializeChat = () => {
+    if (!hasInitialized) {
+      const initialMessage: ChatMessage = {
+        type: "ai",
+        content: `Hello! I'm ConveyAI, your personal assistant. I can help you with "${label}". 
+
+Here's what you can do:
+• Tell me about your current situation or implementation
+• Ask me to explain what information is needed
+• Request specific examples or templates
+• Get suggestions for best practices
+
+What would you like to know or discuss about this topic?`,
+        timestamp: new Date(),
+        suggestions: [
+          "What information should I include here?",
+          "Can you give me examples?",
+          "Help me get started with this question",
+          "What are the best practices for this?",
+        ],
+      };
+      setChatMessages([initialMessage]);
+      setHasInitialized(true);
+    }
+  };
 
   const handleEnhance = async () => {
     if (!value.trim()) {
       setShowChatPopup(true);
+      initializeChat();
       return;
     }
 
@@ -113,22 +196,85 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
     setIsGeneratingFromChat(true);
 
     try {
-      const enhancedContext = validationContext
-        ? `${questionContext}\n\nVALIDATION REQUIREMENTS: ${validationContext}\n\nUSER ADDITIONAL INFORMATION: ${userMessage}\n\nGenerate a comprehensive response based on the user's additional information.`
-        : `${questionContext}\n\nUSER ADDITIONAL INFORMATION: ${userMessage}\n\nGenerate a comprehensive response based on the user's additional information.`;
+      // Create more conversational and helpful response
+      const conversationalContext = `You are a friendly, knowledgeable AI assistant helping with risk assessment questions. 
+      
+Question context: ${label}
+Additional context: ${questionContext}
+${validationContext ? `Requirements: ${validationContext}` : ""}
+
+User said: "${userMessage}"
+
+Respond in a natural, conversational way. Be helpful and provide:
+1. A friendly acknowledgment of their input
+2. Specific, actionable guidance
+3. Relevant examples if helpful
+4. Follow-up suggestions or choices they can pick from
+
+Keep your tone warm and professional, like you're talking to a colleague who needs help.`;
 
       const response = await aiRiskAssessmentService.enhanceAnswer({
         question: label,
-        hints: enhancedContext,
+        hints: conversationalContext,
         user_input: userMessage,
         enhancement_style: "professional",
       });
+
+      // Generate contextual suggestions based on user input
+      let suggestions: string[] = [];
+      const lowerMessage = userMessage.toLowerCase();
+
+      if (
+        lowerMessage.includes("help") ||
+        lowerMessage.includes("start") ||
+        lowerMessage.includes("don't know")
+      ) {
+        suggestions = [
+          "Can you give me a template to work with?",
+          "What are some common examples?",
+          "What specific details should I include?",
+          "Are there any regulatory requirements I should know about?",
+        ];
+      } else if (
+        lowerMessage.includes("example") ||
+        lowerMessage.includes("template")
+      ) {
+        suggestions = [
+          "Can you review what I have so far?",
+          "Is this comprehensive enough?",
+          "What else should I add?",
+          "How can I make this more detailed?",
+        ];
+      } else if (
+        lowerMessage.includes("complete") ||
+        lowerMessage.includes("done") ||
+        lowerMessage.includes("finished")
+      ) {
+        suggestions = [
+          "Can you review and enhance this?",
+          "Is there anything I'm missing?",
+          "How can I improve this response?",
+          "Does this meet compliance requirements?",
+        ];
+      } else {
+        suggestions = [
+          "Can you elaborate on this further?",
+          "What specific examples would work here?",
+          "How does this relate to compliance?",
+          "What are the next steps?",
+        ];
+      }
 
       const aiResponse = response.enhanced_text;
       setCurrentGeneratedText(aiResponse);
       setChatMessages((prev) => [
         ...prev,
-        { type: "ai", content: aiResponse, timestamp: new Date() },
+        {
+          type: "ai",
+          content: aiResponse,
+          timestamp: new Date(),
+          suggestions: suggestions,
+        },
       ]);
     } catch (error) {
       console.error("Error generating from chat:", error);
@@ -136,8 +282,15 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
         ...prev,
         {
           type: "ai",
-          content: "Sorry, I encountered an error. Please try again.",
+          content:
+            "I apologize, but I'm having trouble connecting right now. Could you try rephrasing your question? I'm here to help you with this risk assessment topic.",
           timestamp: new Date(),
+          suggestions: [
+            "Let me try a different approach",
+            "Can you give me basic guidance?",
+            "What should I focus on first?",
+            "Help me understand the requirements",
+          ],
         },
       ]);
     } finally {
@@ -148,23 +301,39 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
   const handleGetSuggestions = async () => {
     setIsGeneratingFromChat(true);
     try {
-      const enhancedContext = validationContext
-        ? `${questionContext}\n\nREQUIRED INFORMATION: ${validationContext}\n\nProvide suggestions that help users include all the required information mentioned above.`
-        : questionContext;
+      const conversationalContext = `You are a helpful AI assistant providing guidance on: ${label}
+
+Context: ${questionContext}
+${validationContext ? `Requirements: ${validationContext}` : ""}
+
+Provide helpful, conversational suggestions in a friendly tone. Start with a warm greeting and explain what kind of information would be valuable here. Give specific, actionable suggestions that help the user understand what to include.`;
 
       const response = await aiRiskAssessmentService.getSuggestions({
         question: label,
-        hints: enhancedContext,
-        num_suggestions: 3,
+        hints: conversationalContext,
+        num_suggestions: 4,
       });
 
-      const suggestionsText = response.suggestions.join("\n\n");
+      const friendlyResponse = `Great! I'd be happy to help you with this. Here are some specific suggestions for what you might want to include:
+
+${response.suggestions
+  .map((suggestion, index) => `${index + 1}. ${suggestion}`)
+  .join("\n\n")}
+
+Feel free to ask me about any of these points, or let me know if you'd like me to elaborate on something specific!`;
+
       setChatMessages((prev) => [
         ...prev,
         {
           type: "ai",
-          content: `Here are some suggestions:\n\n${suggestionsText}`,
+          content: friendlyResponse,
           timestamp: new Date(),
+          suggestions: [
+            "Can you give me a template for this?",
+            "What's the most important point to focus on?",
+            "How detailed should my response be?",
+            "Are there any common mistakes to avoid?",
+          ],
         },
       ]);
     } catch (error) {
@@ -173,8 +342,15 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
         ...prev,
         {
           type: "ai",
-          content: "Sorry, I couldn't generate suggestions. Please try again.",
+          content:
+            "I'd love to help you with suggestions, but I'm having a connection issue right now. Let me know what specific aspect you'd like guidance on, and I'll do my best to help!",
           timestamp: new Date(),
+          suggestions: [
+            "What should I focus on first?",
+            "Can you explain the requirements?",
+            "Help me understand what's needed",
+            "Give me some examples to work with",
+          ],
         },
       ]);
     } finally {
@@ -182,11 +358,16 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setChatInput(suggestion);
+  };
+
   const handleCloseChat = () => {
     setShowChatPopup(false);
     setChatInput("");
     setChatMessages([]);
     setCurrentGeneratedText("");
+    setHasInitialized(false);
   };
 
   const handleCopyGeneratedText = async () => {
@@ -257,113 +438,128 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
       <AnimatePresence>
         {showChatPopup && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 bg-gradient-to-br from-black/60 via-black/50 to-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0, x: 400, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 400, scale: 0.9 }}
+            transition={{
+              duration: 0.4,
+              ease: [0.25, 0.46, 0.45, 0.94],
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
+            className="fixed bottom-4 right-4 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 h-[600px] flex flex-col chat-popup overflow-hidden z-50"
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 20 }}
-              transition={{
-                duration: 0.4,
-                ease: [0.25, 0.46, 0.45, 0.94],
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-              }}
-              className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-100/50 w-full max-w-4xl h-[80vh] flex flex-col chat-popup overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
+              className="flex items-center justify-between p-4 border-b border-gray-200 bg-white"
             >
-              {/* Header */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.3 }}
-                className="flex items-center justify-between p-6 border-b border-gray-100/50 bg-gradient-to-r from-blue-50/50 to-purple-50/50"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    AI Assistant
-                  </h3>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-white" />
                 </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    ConveyAI
+                  </h3>
+                  <p className="text-sm text-green-500 font-medium">Online</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
                 <motion.button
-                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleCloseChat}
-                  className="text-gray-400 hover:text-gray-600 transition-all duration-200 p-2 rounded-full hover:bg-gray-100"
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </motion.button>
-              </motion.div>
+              </div>
+            </motion.div>
 
-              {/* Chat Messages */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-                ref={chatContainerRef}
-                className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50/30 to-white/30"
-              >
-                {chatMessages.length === 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                    className="text-center text-gray-500 py-12"
+            {/* Chat Messages */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              ref={chatContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50/30 to-white/30 scroll-smooth"
+            >
+              {chatMessages.length === 0 && !hasInitialized && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className="text-center text-gray-500 py-12"
+                >
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="h-8 w-8 text-blue-500" />
+                  </div>
+                  <p className="mb-6 text-lg font-medium">
+                    I can help you generate content for this question.
+                  </p>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      initializeChat();
+                      handleGetSuggestions();
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="h-8 w-8 text-blue-500" />
-                    </div>
-                    <p className="mb-6 text-lg font-medium">
-                      I can help you generate content for this question.
-                    </p>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleGetSuggestions}
-                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                    >
-                      Get Suggestions
-                    </motion.button>
-                  </motion.div>
-                )}
-                <AnimatePresence>
-                  {chatMessages.map((message, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                      transition={{
-                        duration: 0.3,
-                        ease: "easeOut",
-                        delay: index * 0.1,
-                      }}
-                      className={`flex ${
-                        message.type === "user"
-                          ? "justify-end"
-                          : "justify-start"
+                    Get Suggestions
+                  </motion.button>
+                </motion.div>
+              )}
+              <AnimatePresence>
+                {chatMessages.map((message, index) => (
+                  <motion.div
+                    key={index}
+                    data-message-index={index}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                    transition={{
+                      duration: 0.3,
+                      ease: "easeOut",
+                      delay: index * 0.1,
+                    }}
+                    className={`flex ${
+                      message.type === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[85%] ${
+                        message.type === "ai" ? "space-y-3" : ""
                       }`}
                     >
                       <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${
+                        whileHover={{ scale: 1.01 }}
+                        className={`rounded-2xl p-4 shadow-sm ${
                           message.type === "user"
-                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white ml-auto"
                             : "bg-white text-gray-800 border border-gray-100"
                         }`}
                       >
+                        {message.type === "ai" && (
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <Sparkles className="h-3 w-3 text-white" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">
+                              ConveyAI
+                            </span>
+                          </div>
+                        )}
                         <div className="whitespace-pre-wrap leading-relaxed">
                           {message.content}
                         </div>
                         <div
-                          className={`text-xs mt-2 ${
+                          className={`text-xs mt-3 ${
                             message.type === "user"
                               ? "text-blue-100"
                               : "text-gray-400"
@@ -372,87 +568,129 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
                           {message.timestamp.toLocaleTimeString()}
                         </div>
                       </motion.div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
 
-              {/* Input Area */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.3 }}
-                className="p-6 border-t border-gray-100/50 bg-gradient-to-r from-gray-50/30 to-white/30"
-              >
-                <form onSubmit={handleChatSubmit} className="flex space-x-3">
-                  <motion.div
-                    className="flex-1 relative"
-                    whileFocus={{ scale: 1.02 }}
-                  >
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Type your message..."
-                      className="w-full p-4 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm transition-all duration-200"
-                      disabled={isGeneratingFromChat}
-                    />
-                    {isGeneratingFromChat && (
+                      {/* Suggestion buttons for AI messages */}
+                      {message.type === "ai" &&
+                        message.suggestions &&
+                        message.suggestions.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2, duration: 0.3 }}
+                            className="flex flex-wrap gap-2"
+                          >
+                            {message.suggestions.map(
+                              (suggestion, suggestionIndex) => (
+                                <motion.button
+                                  key={suggestionIndex}
+                                  whileHover={{ scale: 1.05, y: -2 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() =>
+                                    handleSuggestionClick(suggestion)
+                                  }
+                                  className="px-3 py-2 text-sm bg-gradient-to-r from-gray-100 to-gray-200 hover:from-blue-100 hover:to-purple-100 text-gray-700 hover:text-blue-700 rounded-lg border border-gray-200 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                                >
+                                  {suggestion}
+                                </motion.button>
+                              )
+                            )}
+                          </motion.div>
+                        )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Input Area */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.3 }}
+              className="p-6 border-t border-gray-100/50 bg-white/50 backdrop-blur-sm"
+            >
+              <form onSubmit={handleChatSubmit} className="relative">
+                <motion.div className="relative" whileFocus={{ scale: 1.01 }}>
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Message ConveyAI..."
+                    className="w-full p-4 pr-16 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200 text-gray-800 placeholder-gray-500"
+                    disabled={isGeneratingFromChat}
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+                    {isGeneratingFromChat ? (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2"
+                        className="flex items-center space-x-2 px-3 py-2"
                       >
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                        <span className="text-sm text-gray-500">
+                          Thinking...
+                        </span>
                       </motion.div>
+                    ) : (
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        type="submit"
+                        disabled={!chatInput.trim()}
+                        className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
+                      >
+                        <Send className="w-4 h-4" />
+                      </motion.button>
                     )}
-                  </motion.div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    type="submit"
-                    disabled={!chatInput.trim() || isGeneratingFromChat}
-                    className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none"
-                  >
-                    <Send className="w-5 h-5" />
-                  </motion.button>
-                </form>
-              </motion.div>
+                  </div>
+                </motion.div>
+              </form>
 
-              {/* Action Buttons */}
-              <AnimatePresence>
-                {currentGeneratedText && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ duration: 0.3 }}
-                    className="p-6 border-t border-gray-100/50 bg-gradient-to-r from-green-50/30 to-blue-50/30"
-                  >
-                    <div className="flex space-x-3">
-                      <motion.button
-                        whileHover={{ scale: 1.05, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleCopyGeneratedText}
-                        className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                      >
-                        <Copy className="w-4 h-4" />
-                        <span className="font-medium">Copy</span>
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleUseGeneratedText}
-                        className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl hover:from-green-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span className="font-medium">Use This Text</span>
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Footer text */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.3 }}
+                className="text-xs text-gray-400 text-center mt-3"
+              >
+                ConveyAI can make mistakes. Consider checking important
+                information.
+              </motion.p>
             </motion.div>
+
+            {/* Action Buttons */}
+            <AnimatePresence>
+              {currentGeneratedText && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-6 border-t border-gray-100/50 bg-gradient-to-r from-green-50/30 to-blue-50/30"
+                >
+                  <div className="flex space-x-3">
+                    <motion.button
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleCopyGeneratedText}
+                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <Copy className="w-4 h-4" />
+                      <span className="font-medium">Copy</span>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleUseGeneratedText}
+                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl hover:from-green-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span className="font-medium">Use This Text</span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
