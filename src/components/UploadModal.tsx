@@ -468,10 +468,53 @@ const UploadModal = ({
         localStorage.setItem("dataset_id", datasetId);
       }
 
+      // Upload validation dataset if provided
+      if (formData.validation_dataset) {
+        console.log("Step 2.1: Uploading validation dataset file...");
+        const validationFormData = new FormData();
+        validationFormData.append("file", formData.validation_dataset);
+        validationFormData.append("project_id", p_id || "");
+        validationFormData.append("dataset_name", "validation_data");
+        if (formData.validation_target_column) {
+          validationFormData.append("target_column", formData.validation_target_column);
+        }
+        if (formData.dataset_type) {
+          validationFormData.append(
+            "dataset_type",
+            formData.dataset_type.toLowerCase()
+          );
+        }
+
+        const validationResponse = await fetch(
+          `${baseUrl}/ml/${p_id}/datasets/upload`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: validationFormData,
+          }
+        );
+
+        if (!validationResponse.ok) {
+          throw new Error(
+            `Error uploading validation dataset: ${validationResponse.statusText}`
+          );
+        }
+
+        const validationData = await validationResponse.json();
+        console.log("Validation dataset upload successful:", validationData);
+
+        // Store validation dataset ID in localStorage
+        validationDatasetId = validationData.id;
+        localStorage.setItem("validation_dataset_id", validationDatasetId);
+        localStorage.setItem("is_synthetic_validation", "false");
+      }
+
       // Handle synthetic validation if no validation dataset was uploaded
       if (!formData.validation_dataset && formData.use_synthetic_validation) {
         // Generate synthetic validation data
-        console.log("Step 2.1: Generating synthetic validation dataset...");
+        console.log("Step 2.2: Generating synthetic validation dataset...");
         const syntheticDataPayload = {
           project_id: p_id,
           training_dataset_id: datasetId,
@@ -1803,27 +1846,226 @@ const UploadModal = ({
                         {/* Validation Dataset - Coming Soon */}
                         <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200 flex items-center justify-between">
                           <div>
-                            <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
+                          <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
                               Validation Dataset
                               <span className="ml-2 text-sm font-normal text-gray-500">(Coming Soon)</span>
-                            </label>
+                          </label>
                             <p className="text-gray-500 text-sm mb-2">
                               Uploading a separate validation dataset will be available soon. For now, only training dataset upload is supported.
                             </p>
-                          </div>
+                              </div>
                           <div className="flex items-center">
                             <span className="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 text-sm rounded-full font-medium">
                               <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 8 8">
-                                <circle cx="4" cy="4" r="3" />
-                              </svg>
+                                    <circle cx="4" cy="4" r="3" />
+                                  </svg>
                               Coming Soon
-                            </span>
+                                </span>
                           </div>
                         </div>
                         {/* Synthetic Validation Data Option - hide for now */}
-                      </div>
-                    )}
-                  </div>
+                              </div>
+                            )}
+                          </div>
+                          // Add this section right after the training dataset upload in step 1
+// Replace the existing target column selection with this improved version
+
+{/* Target Column Selection - Always show if dataset is uploaded */}
+{formData.dataset && (
+  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+    <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
+      Target Column <span className="text-red-500 ml-2">*</span>
+      <div className="relative ml-2 group">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 hidden group-hover:block z-10">
+          Select the column you want to predict (target variable)
+        </div>
+      </div>
+    </label>
+
+    {/* Show loading state while analyzing dataset */}
+    {isAnalyzingDataset && (
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-center mb-4">
+        <svg className="animate-spin h-5 w-5 mr-3 text-blue-600" viewBox="0 0 24 24">
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <span className="text-blue-700">Analyzing dataset structure...</span>
+      </div>
+    )}
+
+    {/* Show error if dataset analysis failed */}
+    {datasetAnalysisError && (
+      <div className="bg-red-50 p-4 rounded-lg border border-red-200 mb-4">
+        <p className="text-red-700 text-sm">
+          <strong>Dataset Analysis Error:</strong> {datasetAnalysisError}
+        </p>
+        <p className="text-red-600 text-xs mt-1">
+          Please ensure your file is a valid CSV or JSON format, or manually enter the target column name below.
+        </p>
+      </div>
+    )}
+
+    {/* Column selection - Show dropdown if we have columns, otherwise show text input */}
+    {datasetColumns.length > 0 ? (
+      <div>
+        <p className="text-sm text-gray-500 mb-3">
+          Found {datasetColumns.length} columns in your dataset
+        </p>
+        {datasetColumns.length <= 15 ? (
+          <select
+            className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white text-lg"
+            value={formData.target_column || ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                target_column: e.target.value,
+              })
+            }
+            required
+          >
+            <option value="" disabled>
+              Select target column
+            </option>
+            {datasetColumns.map((column, index) => (
+              <option key={index} value={column}>
+                {column}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div>
+            <input
+              type="text"
+              placeholder="Type the exact target column name"
+              className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg"
+              value={formData.target_column}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  target_column: e.target.value,
+                })
+              }
+              required
+            />
+            <div className="mt-2 max-h-32 overflow-y-auto bg-gray-50 rounded p-2">
+              <p className="text-xs text-gray-600 font-medium mb-1">Available columns:</p>
+              <div className="text-xs text-gray-500 flex flex-wrap gap-1">
+                {datasetColumns.map((column, index) => (
+                  <span
+                    key={index}
+                    className="bg-white px-2 py-1 rounded border cursor-pointer hover:bg-blue-50"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        target_column: column,
+                      })
+                    }
+                  >
+                    {column}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    ) : (
+      // Fallback: Manual input if no columns detected
+      <div>
+        <p className="text-sm text-gray-500 mb-3">
+          {!isAnalyzingDataset && !datasetAnalysisError 
+            ? "Manually enter your target column name" 
+            : "Enter target column name manually"}
+        </p>
+        <input
+          type="text"
+          placeholder="Enter the exact target column name (e.g., 'price', 'label', 'target')"
+          className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg"
+          value={formData.target_column}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              target_column: e.target.value,
+            })
+          }
+          required
+        />
+        <p className="text-xs text-gray-500 mt-2">
+          Make sure this matches exactly with a column name in your dataset
+        </p>
+      </div>
+    )}
+  </div>
+)}
+
+{/* Dataset Type Selection */}
+{formData.dataset && (
+  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+    <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
+      Dataset Type
+      <span className="ml-3 text-sm font-normal text-gray-500">(Optional)</span>
+      <div className="relative ml-2 group">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 hidden group-hover:block z-10">
+          What type of problem is this dataset for?
+        </div>
+      </div>
+    </label>
+    <select
+      className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white text-lg"
+      value={formData.dataset_type || ""}
+      onChange={(e) =>
+        setFormData({ ...formData, dataset_type: e.target.value })
+      }
+    >
+      <option value="">Select dataset type (optional)</option>
+      <option value="tabular">Tabular</option>
+      <option value="text">Text</option>
+      <option value="json">JSON</option>
+    </select>
+    <p className="text-sm text-gray-500 mt-2">
+      This helps optimize the analysis for your specific use case
+    </p>
+  </div>
+)}
                 </div>
               </div>
             )}
