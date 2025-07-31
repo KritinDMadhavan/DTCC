@@ -5,7 +5,7 @@ import { aiRiskAssessmentService } from "../services/AIRiskAssessmentService";
 
 interface AIEnhancedTextAreaProps {
   label: string;
-  field: keyof any;
+  field: string;
   placeholder: string;
   questionContext: string;
   validationContext?: string;
@@ -24,7 +24,6 @@ interface ChatMessage {
 
 const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
   label,
-  field: _field,
   placeholder,
   questionContext,
   validationContext,
@@ -87,25 +86,18 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
 
           // If the last message is from AI, scroll to show the start of that message
           if (lastMessage.type === "ai") {
-            // Find the last AI message element
-            const messageElements = chatContainerRef.current.querySelectorAll(
-              "[data-message-index]"
+            // Find the last AI message element using the data attribute
+            const lastMessageElement = chatContainerRef.current.querySelector(
+              `[data-message-index="${chatMessages.length - 1}"]`
             );
-            const lastMessageElement =
-              messageElements[messageElements.length - 1];
 
             if (lastMessageElement) {
-              // Scroll to show the top of the AI message
-              const containerRect =
-                chatContainerRef.current.getBoundingClientRect();
-              const messageRect = lastMessageElement.getBoundingClientRect();
-              const scrollTop =
-                chatContainerRef.current.scrollTop +
-                (messageRect.top - containerRect.top) -
-                20; // 20px offset from top
+              // Get the position of the message relative to the container
+              const messageTop = (lastMessageElement as HTMLElement).offsetTop;
 
+              // Scroll to show the top of the AI message with some padding
               chatContainerRef.current.scrollTo({
-                top: scrollTop,
+                top: messageTop - 20, // 20px padding from top
                 behavior: "smooth",
               });
             }
@@ -117,7 +109,7 @@ const AIEnhancedTextArea: React.FC<AIEnhancedTextAreaProps> = ({
             });
           }
         }
-      }, 100);
+      }, 200);
     }
   }, [chatMessages]);
 
