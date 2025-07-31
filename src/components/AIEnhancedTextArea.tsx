@@ -129,10 +129,10 @@ Here's what you can do:
 What would you like to know or discuss about this topic?`,
         timestamp: new Date(),
         suggestions: [
-          "What information should I include here?",
-          "Can you give me examples?",
-          "Help me get started with this question",
-          "What are the best practices for this?",
+          "Generate a professional template for this question",
+          "Create specific examples I can use",
+          "Write comprehensive content covering all requirements",
+          "Provide ready-to-use content with best practices",
         ],
       };
       setChatMessages([initialMessage]);
@@ -188,26 +188,30 @@ What would you like to know or discuss about this topic?`,
     setIsGeneratingFromChat(true);
 
     try {
-      // Create more conversational and helpful response
-      const conversationalContext = `You are a friendly, knowledgeable AI assistant helping with risk assessment questions. 
-      
-Question context: ${label}
-Additional context: ${questionContext}
+      // Create context for generating actual questionnaire content
+      const contentGenerationContext = `You are an AI assistant helping to generate professional content for risk assessment questionnaires.
+
+Question: ${label}
+Context: ${questionContext}
 ${validationContext ? `Requirements: ${validationContext}` : ""}
 
-User said: "${userMessage}"
+User request: "${userMessage}"
 
-Respond in a natural, conversational way. Be helpful and provide:
-1. A friendly acknowledgment of their input
-2. Specific, actionable guidance
-3. Relevant examples if helpful
-4. Follow-up suggestions or choices they can pick from
+Based on the user's request, generate actual content that can be directly pasted into the questionnaire field. 
 
-Keep your tone warm and professional, like you're talking to a colleague who needs help.`;
+If the user is asking for:
+- Examples: Provide specific, realistic examples they can use or adapt
+- Templates: Give them structured content they can fill in
+- Help with their draft: Improve and expand their existing content
+- Explanations: Provide the explanation AND generate sample content
+
+Always provide practical, professional content that directly answers the risk assessment question. Make it comprehensive and realistic for a business context.
+
+Generate the content as if you're writing the actual questionnaire response, not having a conversation about it.`;
 
       const response = await aiRiskAssessmentService.enhanceAnswer({
         question: label,
-        hints: conversationalContext,
+        hints: contentGenerationContext,
         user_input: userMessage,
         enhancement_style: "professional",
       });
@@ -222,20 +226,20 @@ Keep your tone warm and professional, like you're talking to a colleague who nee
         lowerMessage.includes("don't know")
       ) {
         suggestions = [
-          "Can you give me a template to work with?",
-          "What are some common examples?",
-          "What specific details should I include?",
-          "Are there any regulatory requirements I should know about?",
+          "Generate a professional template I can customize",
+          "Create specific examples for my industry",
+          "Write detailed content covering all requirements",
+          "Provide a comprehensive response with compliance focus",
         ];
       } else if (
         lowerMessage.includes("example") ||
         lowerMessage.includes("template")
       ) {
         suggestions = [
-          "Can you review what I have so far?",
-          "Is this comprehensive enough?",
-          "What else should I add?",
-          "How can I make this more detailed?",
+          "Expand this into a complete detailed response",
+          "Add more technical depth and specifics",
+          "Include regulatory compliance elements",
+          "Create a more comprehensive version",
         ];
       } else if (
         lowerMessage.includes("complete") ||
@@ -243,27 +247,35 @@ Keep your tone warm and professional, like you're talking to a colleague who nee
         lowerMessage.includes("finished")
       ) {
         suggestions = [
-          "Can you review and enhance this?",
-          "Is there anything I'm missing?",
-          "How can I improve this response?",
-          "Does this meet compliance requirements?",
+          "Review and enhance this content professionally",
+          "Add missing elements for completeness",
+          "Improve clarity and detail level",
+          "Ensure compliance requirements are met",
         ];
       } else {
         suggestions = [
-          "Can you elaborate on this further?",
-          "What specific examples would work here?",
-          "How does this relate to compliance?",
-          "What are the next steps?",
+          "Generate detailed content based on this",
+          "Create specific examples I can use",
+          "Write a comprehensive response",
+          "Provide ready-to-use content",
         ];
       }
 
       const aiResponse = response.enhanced_text;
       setCurrentGeneratedText(aiResponse);
+
+      // Add a brief intro to clarify this is usable content
+      const formattedResponse = `Here's the content you can use for this question:
+
+${aiResponse}
+
+You can copy this text and paste it directly into the questionnaire field, or use the "Use This Text" button below.`;
+
       setChatMessages((prev) => [
         ...prev,
         {
           type: "ai",
-          content: aiResponse,
+          content: formattedResponse,
           timestamp: new Date(),
           suggestions: suggestions,
         },
@@ -278,10 +290,10 @@ Keep your tone warm and professional, like you're talking to a colleague who nee
             "I apologize, but I'm having trouble connecting right now. Could you try rephrasing your question? I'm here to help you with this risk assessment topic.",
           timestamp: new Date(),
           suggestions: [
-            "Let me try a different approach",
-            "Can you give me basic guidance?",
-            "What should I focus on first?",
-            "Help me understand the requirements",
+            "Generate basic content despite the error",
+            "Create simple template content",
+            "Write example content I can use",
+            "Provide any starter content available",
           ],
         },
       ]);
@@ -306,13 +318,13 @@ Provide helpful, conversational suggestions in a friendly tone. Start with a war
         num_suggestions: 4,
       });
 
-      const friendlyResponse = `Great! I'd be happy to help you with this. Here are some specific suggestions for what you might want to include:
+      const friendlyResponse = `Here are some content suggestions you can use or adapt for this question:
 
 ${response.suggestions
   .map((suggestion, index) => `${index + 1}. ${suggestion}`)
   .join("\n\n")}
 
-Feel free to ask me about any of these points, or let me know if you'd like me to elaborate on something specific!`;
+Choose any of these suggestions below to generate detailed content you can paste directly into the questionnaire.`;
 
       setChatMessages((prev) => [
         ...prev,
@@ -321,10 +333,10 @@ Feel free to ask me about any of these points, or let me know if you'd like me t
           content: friendlyResponse,
           timestamp: new Date(),
           suggestions: [
-            "Can you give me a template for this?",
-            "What's the most important point to focus on?",
-            "How detailed should my response be?",
-            "Are there any common mistakes to avoid?",
+            "Generate a detailed template I can customize",
+            "Create comprehensive content for this question",
+            "Write professional examples I can adapt",
+            "Provide complete ready-to-use content",
           ],
         },
       ]);
@@ -338,10 +350,10 @@ Feel free to ask me about any of these points, or let me know if you'd like me t
             "I'd love to help you with suggestions, but I'm having a connection issue right now. Let me know what specific aspect you'd like guidance on, and I'll do my best to help!",
           timestamp: new Date(),
           suggestions: [
-            "What should I focus on first?",
-            "Can you explain the requirements?",
-            "Help me understand what's needed",
-            "Give me some examples to work with",
+            "Generate basic content to get me started",
+            "Create a simple template I can build on",
+            "Write example content I can modify",
+            "Provide starter content for this question",
           ],
         },
       ]);
