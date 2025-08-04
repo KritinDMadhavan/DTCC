@@ -22,11 +22,25 @@ import {
   Scatter,
   ReferenceLine,
 } from "recharts";
-import AppLayout from "../components/AppLayout";
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { InfoTooltip } from "../components/InfoTooltip";
 import { supabase } from "../lib/supabase";
+
+// Thinking steps array for reuse
+const thinkingSteps = [
+  "Analyzing model architecture",
+  "Extracting performance metrics", 
+  "Computing confusion matrix",
+  "Generating ROC curves",
+  "Calculating cross-validation scores",
+  "Processing learning curves",
+  "Evaluating residual patterns",
+  "Assessing feature importance",
+  "Validating generalization ability",
+  "Compiling comprehensive analysis",
+];
 
 // Type for model info
 interface ModelInfo {
@@ -41,6 +55,13 @@ interface DataInfo {
   feature_count: number;
   feature_names: string[];
   class_distribution: Record<string, number>;
+  validation_dataset_used?: boolean;
+  validation_dataset_id?: number;
+  validation_samples?: number;
+  test_dataset_used?: boolean;
+  test_dataset_id?: number;
+  test_samples?: number;
+  class_weights?: Record<string, number>;
 }
 
 // Type for metrics
@@ -97,51 +118,99 @@ interface PerformanceMetrics {
     std_residual: number;
     residuals: number[];
   };
+  feature_importance?: {
+    importances: number[];
+    feature_names: string[];
+    method: string;
+  };
+  validation_comparison?: {
+    training_metrics: {
+      accuracy: number;
+      precision: number;
+      recall: number;
+      f1: number;
+    };
+    validation_metrics: {
+      accuracy: number;
+      precision: number;
+      recall: number;
+      f1: number;
+    };
+    performance_gaps: {
+      accuracy_gap: number;
+      precision_gap: number;
+      recall_gap: number;
+      f1_gap: number;
+    };
+    overfitting_indicators: {
+      accuracy_overfitting: boolean;
+      f1_overfitting: boolean;
+      overall_overfitting_score: number;
+    };
+    generalization_assessment: {
+      good_generalization: boolean;
+      acceptable_generalization: boolean;
+      poor_generalization: boolean;
+    };
+  };
+  // New fields from API
+  detailed_classification_report?: {
+    [key: string]: {
+      precision: number;
+      recall: number;
+      'f1-score': number;
+      support: number;
+    } | number;
+    'macro avg': {
+      precision: number;
+      recall: number;
+      'f1-score': number;
+      support: number;
+    };
+    'weighted avg': {
+      precision: number;
+      recall: number;
+      'f1-score': number;
+      support: number;
+    };
+  };
+  advanced_metrics?: {
+    balanced_accuracy: number;
+    matthews_correlation_coefficient: number;
+    cohen_kappa: number;
+    log_loss: number;
+    brier_score: number;
+  };
+  class_wise_analysis?: {
+    [key: string]: {
+      support: number;
+      predicted_count: number;
+      precision: number;
+      recall: number;
+      f1_score: number;
+    };
+  };
+  dataset_comparison?: {
+    validation_metrics: {
+      accuracy: number;
+      precision: number;
+      recall: number;
+      f1: number;
+    };
+    test_metrics: {
+      accuracy: number;
+      precision: number;
+      recall: number;
+      f1: number;
+    };
+    performance_gap: {
+      accuracy_diff: number;
+      f1_diff: number;
+    };
+  };
 }
 
-// Demo data for the Investment Portfolio Analysis project
-const performanceData = {
-  metrics: {
-    accuracy: 94.5,
-    f1Score: 93.2,
-    aucRoc: 95.8,
-    status: {
-      accuracy: "Above Target",
-      f1Score: "Good",
-      aucRoc: "Excellent",
-    },
-  },
-  trends: Array.from({ length: 30 }, (_, i) => ({
-    date: `Jan ${i + 1}`,
-    accuracy: 90 + Math.random() * 10,
-    precision: 88 + Math.random() * 12,
-    recall: 89 + Math.random() * 11,
-    f1_score: 91 + Math.random() * 9,
-    auc_roc: 92 + Math.random() * 8,
-  })),
-  distribution: Array.from({ length: 30 }, (_, i) => ({
-    date: `Jan ${i + 1}`,
-    "True Positives": Math.round((0.4 + Math.random() * 0.1) * 100),
-    "True Negatives": Math.round((0.3 + Math.random() * 0.1) * 100),
-    "False Positives": Math.round((0.2 + Math.random() * 0.1) * 100),
-    "False Negatives": Math.round((0.1 + Math.random() * 0.1) * 100),
-  })),
-  confusionMatrix: [
-    { name: "True Negative", value: 423, fill: "#3182CE" },
-    { name: "False Positive", value: 17, fill: "#F56565" },
-    { name: "False Negative", value: 28, fill: "#ED8936" },
-    { name: "True Positive", value: 532, fill: "#38A169" },
-  ],
-  precisionRecall: Array.from({ length: 11 }, (_, i) => ({
-    recall: i * 0.1,
-    precision: i === 10 ? 0.5 : 1 - i * 0.1 * 0.5,
-  })),
-  rocCurve: Array.from({ length: 11 }, (_, i) => ({
-    fpr: i * 0.1,
-    tpr: i === 0 ? 0 : Math.min(1, Math.pow(i * 0.1, 0.5) * 1.5),
-    random: i * 0.1,
-  })),
-};
+
 
 const MetricCard = ({
   title,
@@ -690,7 +759,7 @@ const formatRocCurve = (rocCurve: any) => {
     }));
   }
 
-  // Check if rocCurve has direct fpr, tpr arrays (top-level)
+  // Check if rocCurve has direct fpr, tpr arrays (new API structure)
   if (Array.isArray(rocCurve.fpr) && Array.isArray(rocCurve.tpr)) {
     return rocCurve.fpr.map((fpr: number, index: number) => ({
       fpr: fpr,
@@ -699,8 +768,8 @@ const formatRocCurve = (rocCurve: any) => {
     }));
   }
 
-  // Get the first class key (usually 'class_0', 'class_1', etc.)
-  const classKeys = Object.keys(rocCurve);
+  // Get the first class key (usually 'class_0', 'class_1', etc.) for legacy structure
+  const classKeys = Object.keys(rocCurve).filter(key => key !== 'auc'); // Exclude auc field
 
   // If there are no class keys, use default values
   if (classKeys.length === 0) {
@@ -776,20 +845,20 @@ const formatLearningCurve = (learningCurve: any) => {
 const calculateAverageAUC = (rocCurve: any) => {
   if (!rocCurve) return 0;
 
+  // First check if there's a direct AUC value in the new structure
+  if (rocCurve.auc !== undefined) {
+    return rocCurve.auc;
+  }
+
   let total = 0;
   let count = 0;
 
-  // First try to extract direct auc values if available
+  // Try to extract direct auc values if available from class-based structure
   for (const className in rocCurve) {
     if (rocCurve[className]?.auc !== undefined) {
       total += rocCurve[className].auc;
       count++;
     }
-  }
-
-  // If no AUC values found directly, check if there's a summary AUC
-  if (count === 0 && rocCurve.auc !== undefined) {
-    return rocCurve.auc;
   }
 
   return count > 0 ? total / count : 0;
@@ -843,6 +912,13 @@ const formatPerformanceData = (data: any): PerformanceMetrics => {
       feature_count: 0,
       feature_names: [],
       class_distribution: {},
+      validation_dataset_used: false,
+      validation_dataset_id: undefined,
+      validation_samples: 0,
+      test_dataset_used: false,
+      test_dataset_id: undefined,
+      test_samples: 0,
+      class_weights: {},
     },
     cross_validation: {
       mean_score: 0,
@@ -861,6 +937,8 @@ const formatPerformanceData = (data: any): PerformanceMetrics => {
       std_residual: 0,
       residuals: [],
     },
+    feature_importance: undefined,
+    validation_comparison: undefined,
   };
 
   // If data is null or undefined, return default data
@@ -869,25 +947,23 @@ const formatPerformanceData = (data: any): PerformanceMetrics => {
   }
 
   try {
-    // Extract the metrics object from the API response
-    const metricsData = data.metrics || {};
-
+    // Handle new API structure where data is under metrics
+    const resultsData = data.metrics || data.results || data;
+    
     // Check if this is a regression model
-    const isRegression =
-      data.model_info?.type === "regression" ||
-      metricsData.model_info?.type === "regression";
+    const isRegression = resultsData.model_info?.type === "regression";
 
     if (isRegression) {
       // Extract regression metrics
       const regression_metrics = {
-        mse: metricsData.basic_metrics?.mse || 0,
-        rmse: metricsData.basic_metrics?.rmse || 0,
-        mae: metricsData.basic_metrics?.mae || 0,
-        r2: metricsData.basic_metrics?.r2 || 0,
+        mse: resultsData.basic_metrics?.mse || 0,
+        rmse: resultsData.basic_metrics?.rmse || 0,
+        mae: resultsData.basic_metrics?.mae || 0,
+        r2: resultsData.basic_metrics?.r2 || 0,
       };
 
       // Extract residual analysis data
-      const residual_analysis = metricsData.residual_analysis || {
+      const residual_analysis = resultsData.residual_analysis || {
         mean_residual: 0,
         std_residual: 0,
         residuals: [],
@@ -900,89 +976,92 @@ const formatPerformanceData = (data: any): PerformanceMetrics => {
         precisionRecall: defaultData.precisionRecall,
         rocCurve: defaultData.rocCurve,
         modelInfo: {
-          type: metricsData.model_info?.type || "regression",
-          name: data.model_name || metricsData.model_info?.name || "unknown",
-          version:
-            data.model_version || metricsData.model_info?.version || "0.0.0",
+          type: resultsData.model_info?.type || "regression",
+          name: resultsData.model_info?.name || "unknown",
+          version: resultsData.model_info?.version || "0.0.0",
         },
-        dataInfo: metricsData.data_info || defaultData.dataInfo,
-        learningCurve: formatLearningCurve(metricsData.learning_curve),
+        dataInfo: resultsData.data_info || defaultData.dataInfo,
+        learningCurve: formatLearningCurve(resultsData.learning_curve),
         cross_validation: {
-          mean_score: metricsData.cross_validation?.mean_score || 0,
-          std_score: metricsData.cross_validation?.std_score || 0,
-          scores: metricsData.cross_validation?.scores || [],
+          mean_score: resultsData.cross_validation?.mean_score || 0,
+          std_score: resultsData.cross_validation?.std_score || 0,
+          scores: resultsData.cross_validation?.scores || [],
         },
         // Add regression-specific properties
         regression_metrics,
         residual_analysis,
         // Flag to indicate this is regression data
         isRegression: true,
+        feature_importance: resultsData.feature_importance,
+        validation_comparison: resultsData.validation_comparison,
       };
     } else {
-      // Extract AUC-ROC value from different possible locations in the response
+      // Extract AUC-ROC value from the new API structure
       let aucRocValue = 0;
 
-      // Try direct auc field first
-      if (metricsData.basic_metrics?.auc !== undefined) {
-        aucRocValue = metricsData.basic_metrics.auc;
+      // Try to get AUC from roc_curve.auc (new structure)
+      if (resultsData.roc_curve?.auc !== undefined) {
+        aucRocValue = resultsData.roc_curve.auc;
       }
-      // Then try roc_auc field
-      else if (metricsData.basic_metrics?.roc_auc !== undefined) {
-        aucRocValue = metricsData.basic_metrics.roc_auc;
+      // Fallback to basic_metrics.auc
+      else if (resultsData.basic_metrics?.auc !== undefined) {
+        aucRocValue = resultsData.basic_metrics.auc;
       }
-      // Then try calculating from roc_curve data
+      // Fallback to basic_metrics.roc_auc
+      else if (resultsData.basic_metrics?.roc_auc !== undefined) {
+        aucRocValue = resultsData.basic_metrics.roc_auc;
+      }
+      // Calculate from ROC curve data
       else {
-        aucRocValue = calculateAverageAUC(metricsData.roc_curve);
+        aucRocValue = calculateAverageAUC(resultsData.roc_curve);
       }
 
-      // Make sure we convert to percentage (0-100 scale)
+      // Convert to percentage (0-100 scale)
       aucRocValue = aucRocValue * 100;
 
-      // Log to debug
-      console.log("AUC-ROC Value:", aucRocValue);
-
-      // Handle classification metrics
+      // Handle classification metrics with new structure
       const metrics = {
-        accuracy: metricsData.basic_metrics?.accuracy * 100 || 0,
-        f1Score: metricsData.basic_metrics?.f1 * 100 || 0,
-        precision: metricsData.basic_metrics?.precision * 100 || 0,
-        recall: metricsData.basic_metrics?.recall * 100 || 0,
-        // Use the extracted AUC-ROC value
+        accuracy: (resultsData.basic_metrics?.accuracy || 0) * 100,
+        f1Score: (resultsData.basic_metrics?.f1 || 0) * 100,
+        precision: (resultsData.basic_metrics?.precision || 0) * 100,
+        recall: (resultsData.basic_metrics?.recall || 0) * 100,
         aucRoc: aucRocValue,
         status: {
-          accuracy: getMetricStatus(
-            metricsData.basic_metrics?.accuracy * 100 || 0
-          ),
-          f1Score: getMetricStatus(metricsData.basic_metrics?.f1 * 100 || 0),
-          precision: getMetricStatus(
-            metricsData.basic_metrics?.precision * 100 || 0
-          ),
-          recall: getMetricStatus(metricsData.basic_metrics?.recall * 100 || 0),
+          accuracy: getMetricStatus((resultsData.basic_metrics?.accuracy || 0) * 100),
+          f1Score: getMetricStatus((resultsData.basic_metrics?.f1 || 0) * 100),
+          precision: getMetricStatus((resultsData.basic_metrics?.precision || 0) * 100),
+          recall: getMetricStatus((resultsData.basic_metrics?.recall || 0) * 100),
           aucRoc: getMetricStatus(aucRocValue),
         },
       };
 
       return {
         metrics,
-        confusionMatrix: formatConfusionMatrix(metricsData.confusion_matrix),
+        confusionMatrix: formatConfusionMatrix(resultsData.confusion_matrix),
         precisionRecall: defaultData.precisionRecall,
-        rocCurve: formatRocCurve(metricsData.roc_curve),
-        learningCurve: formatLearningCurve(metricsData.learning_curve),
+        rocCurve: formatRocCurve(resultsData.roc_curve),
+        learningCurve: formatLearningCurve(resultsData.learning_curve),
         modelInfo: {
-          type: metricsData.model_info?.type || "unknown",
-          name: data.model_name || metricsData.model_info?.name || "unknown",
-          version:
-            data.model_version || metricsData.model_info?.version || "0.0.0",
+          type: resultsData.model_info?.type || "classification",
+          name: resultsData.model_info?.name || "unknown",
+          version: resultsData.model_info?.version || "0.0.0",
         },
-        dataInfo: metricsData.data_info || defaultData.dataInfo,
+        dataInfo: resultsData.data_info || defaultData.dataInfo,
         cross_validation: {
-          mean_score: metricsData.cross_validation?.mean_score || 0,
-          std_score: metricsData.cross_validation?.std_score || 0,
-          scores: metricsData.cross_validation?.scores || [],
+          mean_score: resultsData.cross_validation?.mean_score || 0,
+          std_score: resultsData.cross_validation?.std_score || 0,
+          scores: resultsData.cross_validation?.scores || [],
         },
         isRegression: false,
         regression_metrics: defaultData.regression_metrics,
         residual_analysis: defaultData.residual_analysis,
+        feature_importance: resultsData.feature_importance,
+        validation_comparison: resultsData.validation_comparison,
+        // New fields from API
+        detailed_classification_report: resultsData.detailed_classification_report,
+        advanced_metrics: resultsData.advanced_metrics,
+        class_wise_analysis: resultsData.class_wise_analysis,
+        dataset_comparison: resultsData.dataset_comparison,
       };
     }
   } catch (error: any) {
@@ -1071,15 +1150,43 @@ const DataInfoCard = ({
           {data.feature_count}
         </span>
       </div>
-      <div className="flex justify-between">
-        <span className="text-sm text-gray-500 min-w-[100px]">Classes:</span>
-        <span
-          className="text-sm font-medium ml-2 text-right truncate max-w-[60%]"
-          title={Object.keys(data.class_distribution || {}).length.toString()}
-        >
-          {Object.keys(data.class_distribution || {}).length}
-        </span>
-      </div>
+      {!isRegression && (
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[100px]">Classes:</span>
+          <span
+            className="text-sm font-medium ml-2 text-right truncate max-w-[60%]"
+            title={Object.keys(data.class_distribution || {}).length.toString()}
+          >
+            {Object.keys(data.class_distribution || {}).length}
+          </span>
+        </div>
+      )}
+      {data.validation_dataset_used && (
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[100px]">
+            Validation Samples:
+          </span>
+          <span
+            className="text-sm font-medium ml-2 text-right truncate max-w-[60%]"
+            title={data.validation_samples?.toString() || "0"}
+          >
+            {data.validation_samples || 0}
+          </span>
+        </div>
+      )}
+      {data.test_dataset_used && (
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[100px]">
+            Test Samples:
+          </span>
+          <span
+            className="text-sm font-medium ml-2 text-right truncate max-w-[60%]"
+            title={data.test_samples?.toString() || "0"}
+          >
+            {data.test_samples || 0}
+          </span>
+        </div>
+      )}
     </div>
   </div>
 );
@@ -1090,6 +1197,275 @@ const formatMetricValue = (
   decimalPlaces: number = 1
 ): string => {
   return value.toFixed(decimalPlaces);
+};
+
+// Advanced Metrics Card Component
+const AdvancedMetricsCard = ({ data }: { data: any }) => {
+  if (!data) return null;
+  
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-full">
+      <h3 className="text-lg font-medium text-gray-900 mb-3">
+        Advanced Metrics
+      </h3>
+      <div className="space-y-3">
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[120px]">
+            Balanced Accuracy:
+          </span>
+          <span className="text-sm font-medium ml-2 text-right">
+            {(data.balanced_accuracy * 100).toFixed(1)}%
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[120px]">
+            MCC:
+          </span>
+          <span className="text-sm font-medium ml-2 text-right">
+            {data.matthews_correlation_coefficient.toFixed(3)}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[120px]">
+            Cohen's Kappa:
+          </span>
+          <span className="text-sm font-medium ml-2 text-right">
+            {data.cohen_kappa.toFixed(3)}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[120px]">
+            Log Loss:
+          </span>
+          <span className="text-sm font-medium ml-2 text-right">
+            {data.log_loss.toFixed(4)}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500 min-w-[120px]">
+            Brier Score:
+          </span>
+          <span className="text-sm font-medium ml-2 text-right">
+            {data.brier_score.toFixed(4)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Class-wise Analysis Card Component
+const ClassWiseAnalysisCard = ({ data }: { data: any }) => {
+  if (!data) return null;
+  
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-full">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">
+        Class-wise Analysis
+      </h3>
+      <div className="space-y-4">
+        {Object.entries(data).map(([className, metrics]: [string, any]) => (
+          <div key={className} className="border-b border-gray-100 pb-3 last:border-b-0">
+            <h4 className="text-sm font-medium text-gray-800 mb-2">
+              Class {className}
+            </h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Support:</span>
+                <span className="font-medium">{metrics.support}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Predicted:</span>
+                <span className="font-medium">{metrics.predicted_count}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Precision:</span>
+                <span className="font-medium">{(metrics.precision * 100).toFixed(1)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Recall:</span>
+                <span className="font-medium">{(metrics.recall * 100).toFixed(1)}%</span>
+              </div>
+              <div className="flex justify-between col-span-2">
+                <span className="text-gray-500">F1-Score:</span>
+                <span className="font-medium">{(metrics.f1_score * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Dataset Comparison Card Component
+const DatasetComparisonCard = ({ data }: { data: any }) => {
+  if (!data) return null;
+  
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-full">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">
+        Dataset Performance Comparison
+      </h3>
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-medium text-gray-800 mb-2">Validation vs Test</h4>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-gray-500 block mb-1">Validation</span>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>Accuracy:</span>
+                  <span className="font-medium">{(data.validation_metrics.accuracy * 100).toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>F1-Score:</span>
+                  <span className="font-medium">{(data.validation_metrics.f1 * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <span className="text-gray-500 block mb-1">Test</span>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>Accuracy:</span>
+                  <span className="font-medium">{(data.test_metrics.accuracy * 100).toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>F1-Score:</span>
+                  <span className="font-medium">{(data.test_metrics.f1 * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-gray-100 pt-3">
+          <h4 className="text-sm font-medium text-gray-800 mb-2">Performance Gaps</h4>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Accuracy Difference:</span>
+              <span className="font-medium">{Math.abs(data.performance_gap.accuracy_diff * 100).toFixed(3)}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">F1 Difference:</span>
+              <span className="font-medium">{Math.abs(data.performance_gap.f1_diff * 100).toFixed(3)}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Detailed Classification Report Component
+const DetailedClassificationReportCard = ({ data }: { data: any }) => {
+  if (!data) return null;
+  
+  // Filter out non-class entries and overall metrics
+  const classEntries = Object.entries(data).filter(([key, value]) => 
+    !['accuracy', 'macro avg', 'weighted avg'].includes(key) && 
+    typeof value === 'object'
+  );
+  
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">
+        Detailed Classification Report
+      </h3>
+      
+      {/* Overall Accuracy */}
+      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-blue-900">Overall Accuracy:</span>
+          <span className="text-lg font-bold text-blue-900">
+            {typeof data.accuracy === 'number' ? (data.accuracy * 100).toFixed(1) : 'N/A'}%
+          </span>
+        </div>
+      </div>
+      
+      {/* Class-specific metrics */}
+      <div className="space-y-4">
+        {classEntries.map(([className, metrics]: [string, any]) => (
+          <div key={className} className="border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-800 mb-3">
+              Class {className}
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="text-center">
+                <div className="text-gray-500 mb-1">Precision</div>
+                <div className="font-semibold text-lg">
+                  {(metrics.precision * 100).toFixed(1)}%
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-gray-500 mb-1">Recall</div>
+                <div className="font-semibold text-lg">
+                  {(metrics.recall * 100).toFixed(1)}%
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-gray-500 mb-1">F1-Score</div>
+                <div className="font-semibold text-lg">
+                  {(metrics['f1-score'] * 100).toFixed(1)}%
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-gray-500 mb-1">Support</div>
+                <div className="font-semibold text-lg">{metrics.support}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Summary statistics */}
+      {(data['macro avg'] || data['weighted avg']) && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <h4 className="text-sm font-medium text-gray-800 mb-3">Summary</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {data['macro avg'] && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h5 className="text-xs font-medium text-gray-600 mb-2">Macro Average</h5>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Precision:</span>
+                    <span className="font-medium">{(data['macro avg'].precision * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Recall:</span>
+                    <span className="font-medium">{(data['macro avg'].recall * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>F1-Score:</span>
+                    <span className="font-medium">{(data['macro avg']['f1-score'] * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {data['weighted avg'] && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h5 className="text-xs font-medium text-gray-600 mb-2">Weighted Average</h5>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span>Precision:</span>
+                    <span className="font-medium">{(data['weighted avg'].precision * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Recall:</span>
+                    <span className="font-medium">{(data['weighted avg'].recall * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>F1-Score:</span>
+                    <span className="font-medium">{(data['weighted avg']['f1-score'] * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const RegressionMetricCard = ({
@@ -1109,11 +1485,9 @@ const RegressionMetricCard = ({
   isPercentage?: boolean;
   infoData: any;
 }) => (
-  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-full">
+  <div className="bg-white p-6 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between mb-2">
-      <h3 className="text-lg font-medium text-gray-900 truncate pr-2">
-        {title}
-      </h3>
+      <h3 className="text-sm font-medium text-gray-600">{title}</h3>
       <InfoTooltip
         title={title}
         entityType="metric"
@@ -1126,34 +1500,136 @@ const RegressionMetricCard = ({
         }}
       />
     </div>
-    <div className="flex flex-wrap items-baseline gap-2">
-      <span className="text-3xl font-bold text-gray-900 break-all">
-        {isPercentage
-          ? (value * 100).toFixed(2) + "%"
-          : value.toFixed(
-              Math.abs(value) < 0.01 ? 4 : Math.abs(value) < 1 ? 3 : 2
-            ) + (unit ? " " + unit : "")}
-      </span>
-      <span
-        className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
-          status === "Excellent"
-            ? "bg-green-100 text-green-800"
-            : status === "Good"
-            ? "bg-blue-100 text-blue-800"
-            : status === "Needs Improvement"
-            ? "bg-red-100 text-red-800"
-            : "bg-yellow-100 text-yellow-800"
-        }`}
-      >
-        {status}
-      </span>
+    <div className="flex items-end justify-between">
+      <div>
+        <p className="text-2xl font-bold text-gray-900">
+          {isPercentage
+            ? `${(value * 100).toFixed(1)}%`
+            : value.toFixed(3)}
+          {unit}
+        </p>
+        <p
+          className={`text-sm font-medium ${
+            status === "Excellent"
+              ? "text-green-600"
+              : status === "Good"
+              ? "text-blue-600"
+              : status === "Fair"
+              ? "text-yellow-600"
+              : "text-red-600"
+          }`}
+        >
+          {status}
+        </p>
+      </div>
     </div>
+
     <p
-      className="mt-2 text-sm text-gray-500 overflow-hidden text-ellipsis"
+      className="text-xs text-gray-500 mt-2 line-clamp-2"
       title={description}
     >
       {description}
     </p>
+  </div>
+);
+
+// Get status for R² (higher is better)
+const getR2Status = (value: number) => {
+  if (value >= 0.95) return "Excellent";
+  if (value >= 0.9) return "Good";
+  if (value >= 0.8) return "Above Target";
+  if (value >= 0.7) return "On Target";
+  return "Needs Improvement";
+};
+
+// Get status for error metrics (lower is better)
+const getErrorMetricStatus = (value: number, metricType: string) => {
+  // These thresholds would ideally be dynamic based on the dataset
+  // Using placeholder values that should be adjusted for specific use cases
+
+  // For MSE
+  if (metricType === "MSE") {
+    if (value < 50) return "Excellent";
+    if (value < 100) return "Good";
+    if (value < 200) return "Above Target";
+    if (value < 400) return "On Target";
+    return "Needs Improvement";
+  }
+
+  // For RMSE
+  if (metricType === "RMSE") {
+    if (value < 5) return "Excellent";
+    if (value < 10) return "Good";
+    if (value < 15) return "Above Target";
+    if (value < 20) return "On Target";
+    return "Needs Improvement";
+  }
+
+  // For MAE
+  if (metricType === "MAE") {
+    if (value < 4) return "Excellent";
+    if (value < 8) return "Good";
+    if (value < 12) return "Above Target";
+    if (value < 16) return "On Target";
+    return "Needs Improvement";
+  }
+
+  return "Not Available";
+};
+
+const ResidualPlot = ({ residuals }: { residuals: number[] }) => (
+  <div className="w-full h-full">
+    <div className="flex items-center justify-between mb-2">
+      <h3 className="text-sm font-medium text-gray-700">Residual Analysis</h3>
+      <InfoTooltip
+        title="About Residual Analysis"
+        entityType="chart"
+        entityName="Residual Analysis"
+        data={{
+          chartData: residuals.map((residual, index) => ({ index, residual })),
+        }}
+      />
+    </div>
+    <div className="h-[280px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 40 }}>
+          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+          <XAxis
+            type="number"
+            dataKey="index"
+            name="Sample Index"
+            label={{
+              value: "Sample Index",
+              position: "insideBottomRight",
+              offset: -10,
+            }}
+          />
+          <YAxis
+            type="number"
+            dataKey="residual"
+            name="Residual"
+            label={{ value: "Residual", angle: -90, position: "insideLeft" }}
+          />
+          <Tooltip
+            formatter={(value: any) => [value.toFixed(2), "Residual"]}
+            labelFormatter={(value) => `Sample: ${value}`}
+            contentStyle={{
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              borderRadius: "8px",
+              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+              border: "1px solid #E5E7EB",
+            }}
+          />
+          <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
+          <Scatter
+            name="Residuals"
+            data={residuals.map((residual, index) => ({ index, residual }))}
+            fill="#8884d8"
+            opacity={0.6}
+          />
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
   </div>
 );
 
@@ -1165,85 +1641,166 @@ const PerformancePage: React.FC = () => {
   const [performanceMetrics, setPerformanceMetrics] =
     useState<PerformanceMetrics | null>(null);
 
-  // Check if this is a dummy project
-  const isDummyProject = id === "dummy-1" || id === "dummy-2";
-
   // New state to track if analysis exists
-  const [hasAnalysis, setHasAnalysis] = useState(isDummyProject);
+  const [hasAnalysis, setHasAnalysis] = useState(false);
+  
+  // New state for selected model
+  const [selectedModel, setSelectedModel] = useState<{
+    model_id: string;
+    model_version: string;
+    display_name: string;
+  } | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loadingPerformance, setLoadingPerformance] = useState(false);
+
+  // Function to fetch performance data for a specific model
+  const fetchPerformanceData = async (modelId: string, modelVersion: string) => {
+    setLoadingPerformance(true);
+    console.log("Fetching performance data for:", { projectId: id, modelId, modelVersion });
+    
+    const apiUrl = `http://localhost:8000/ml/performance/${id}/${modelId}/${modelVersion}`;
+    
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      
+      if (!accessToken) {
+        console.error("No access token found");
+        return;
+      }
+
+      if (!id) {
+        console.error("No project ID found");
+        return;
+      }
+
+      if (!modelId || !modelVersion) {
+        console.error("Missing modelId or modelVersion:", { modelId, modelVersion });
+        return;
+      }
+
+      console.log("Making API request to:", apiUrl);
+
+      const response = await fetch(
+        apiUrl,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const apiData = await response.json();
+        console.log("Performance API Response:", apiData);
+        
+        const formattedData = formatPerformanceData(apiData);
+        setPerformanceMetrics(formattedData);
+        setHasAnalysis(true);
+      } else {
+        const errorText = await response.text().catch(() => "Unable to read error response");
+        console.error("Performance API error:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorBody: errorText,
+          url: response.url
+        });
+        setHasAnalysis(false);
+      }
+    } catch (error) {
+      console.error("Error fetching performance data:", error);
+      console.error("Request details:", {
+        url: apiUrl,
+        projectId: id,
+        modelId,
+        modelVersion,
+        hasToken: !!localStorage.getItem("access_token")
+      });
+      setHasAnalysis(false);
+    } finally {
+      setLoadingPerformance(false);
+    }
+  };
+
+  // Model Selector Dropdown Component
+  const ModelSelectorDropdown = () => (
+    <div className="relative">
+      <button
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="inline-flex items-center justify-between w-64 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+        disabled={models.length === 0}
+      >
+        <span className="truncate">
+          {selectedModel
+            ? selectedModel.display_name
+            : models.length > 0
+            ? "Select a model..."
+            : "No models available"}
+        </span>
+        <svg
+          className="w-5 h-5 ml-2 -mr-1"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {dropdownOpen && models.length > 0 && (
+        <div className="absolute right-0 z-10 w-64 mt-2 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg">
+          <div className="py-1" role="menu">
+            {models.map((model, index) => {
+              const displayName = `Model ${model.model_id} v${model.model_version}`;
+              return (
+                <button
+                  key={`${model.model_id}-${model.model_version}`}
+                  onClick={() => {
+                    const modelData = {
+                      model_id: model.model_id,
+                      model_version: model.model_version,
+                      display_name: displayName,
+                    };
+                    setSelectedModel(modelData);
+                    setDropdownOpen(false);
+                    fetchPerformanceData(model.model_id, model.model_version);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 focus:outline-none focus:bg-gray-100 ${
+                    selectedModel?.model_id === model.model_id &&
+                    selectedModel?.model_version === model.model_version
+                      ? "bg-teal-50 text-teal-700"
+                      : "text-gray-700"
+                  }`}
+                  role="menuitem"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{displayName}</span>
+                    <span className="text-xs text-gray-500">
+                      Dataset ID: {model.dataset_id}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   useEffect(() => {
     const fetchModels = async () => {
       try {
         setLoading(true);
 
-        // If it's a dummy project, set the performanceMetrics to the dummy data
-        if (isDummyProject) {
-          // Format the dummy data to match the expected structure
-          const dummyFormattedData: PerformanceMetrics = {
-            metrics: {
-              accuracy: performanceData.metrics.accuracy,
-              f1Score: performanceData.metrics.f1Score,
-              precision: 92.7,
-              recall: 91.5,
-              aucRoc: performanceData.metrics.aucRoc,
-              status: {
-                accuracy: performanceData.metrics.status.accuracy,
-                f1Score: performanceData.metrics.status.f1Score,
-                precision: "Excellent",
-                recall: "Excellent",
-                aucRoc: performanceData.metrics.status.aucRoc,
-              },
-            },
-            confusionMatrix: performanceData.confusionMatrix,
-            precisionRecall: performanceData.precisionRecall,
-            rocCurve: performanceData.rocCurve,
-            learningCurve: {
-              trainSizes: [100, 500, 1000, 1500, 2000],
-              trainScores: [0.85, 0.87, 0.9, 0.92, 0.94],
-              testScores: [0.82, 0.85, 0.87, 0.89, 0.91],
-            },
-            modelInfo: {
-              type: "Random Forest",
-              name: "Investment Portfolio Predictor",
-              version: "1.2.3",
-            },
-            dataInfo: {
-              total_samples: 2000,
-              feature_count: 35,
-              feature_names: [
-                "return_ratio",
-                "volatility",
-                "market_cap",
-                "sector_performance",
-              ],
-              class_distribution: {
-                "0": 800,
-                "1": 1200,
-              },
-            },
-            cross_validation: {
-              mean_score: 0.915,
-              std_score: 0.023,
-              scores: [0.91, 0.92, 0.93, 0.9, 0.91],
-            },
-            isRegression: false,
-            regression_metrics: {
-              mse: 0,
-              rmse: 0,
-              mae: 0,
-              r2: 0,
-            },
-            residual_analysis: {
-              mean_residual: 0,
-              std_residual: 0,
-              residuals: [],
-            },
-          };
 
-          setPerformanceMetrics(dummyFormattedData);
-          setLoading(false);
-          return;
-        }
 
         // Get access token from localStorage
         const accessToken = localStorage.getItem("access_token");
@@ -1270,52 +1827,9 @@ const PerformancePage: React.FC = () => {
         setModels(data || []);
         console.log("projectid", id);
         console.log("data", data);
-        // If we have models for this project, fetch performance data
-        if (data && data.length > 0) {
-          const modelId = data[0].model_id;
-          const projectId = data[0].project_id;
-          const model_version = data[0].model_version;
-          // Use the first model
-
-          try {
-            console.log("projectId", projectId);
-            console.log("modelId", modelId);
-            console.log("model_version", model_version);
-            // Call the performance API with project_id and model_id and include the auth token
-            const response = await fetch(
-              `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/performance/${projectId}/${modelId}/${model_version}`,
-              {
-                method: "GET",
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "application/json",
-                },
-              }
-            );
-
-            if (response.ok) {
-              const apiData = await response.json();
-              console.log(apiData);
-              // Process and validate the API response data
-              const formattedData = formatPerformanceData(apiData);
-              setPerformanceMetrics(formattedData);
-              setHasAnalysis(true);
-            } else {
-              console.error(
-                "Performance API returned an error:",
-                response.statusText
-              );
-              // Still show the analysis UI if we have models but no performance data
-              setHasAnalysis(data.length > 0);
-            }
-          } catch (apiError) {
-            console.error("Error fetching performance data:", apiError);
-            // If API call fails, still show analysis if we have models
-            setHasAnalysis(data.length > 0);
-          }
-        } else {
-          setHasAnalysis(false);
-        }
+        
+        // Set hasAnalysis to true if we have models, but don't auto-fetch performance data
+        setHasAnalysis(data && data.length > 0);
       } catch (error) {
         console.error("Error fetching models:", error);
       } finally {
@@ -1324,7 +1838,7 @@ const PerformancePage: React.FC = () => {
     };
 
     fetchModels();
-  }, [id, isDummyProject]);
+      }, [id]);
 
   const breadcrumbSegments = [
     { title: "Projects", href: "/home" },
@@ -1332,13 +1846,12 @@ const PerformancePage: React.FC = () => {
     { title: "Performance", href: `/projects/${id}/performance` },
   ];
 
-  // If still loading, show a loading state
-  if (loading && !isDummyProject) {
+  // If still loading, show loading state
+  if (loading) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading performance data...</p>
+      <div className="flex-1 p-8">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-gray-600">Loading models...</p>
         </div>
       </div>
     );
@@ -1630,13 +2143,12 @@ const PerformancePage: React.FC = () => {
     );
   }
 
-  // Use properly formatted performance data
-  const dataToDisplay =
-    performanceMetrics || formatPerformanceData(performanceData);
+  // Use properly formatted performance data or default empty data
+  const dataToDisplay = performanceMetrics || formatPerformanceData(null);
 
   // Return just the content without wrapping in AppLayout
   // This assumes that this page is rendered within a layout at the router level
-  const content = isDummyProject ? (
+  const content = false ? (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -1660,6 +2172,21 @@ const PerformancePage: React.FC = () => {
           isRegression={dataToDisplay.isRegression}
         />
       </div>
+
+      {/* Advanced Analytics Cards - Only for classification */}
+      {!dataToDisplay.isRegression && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {dataToDisplay.advanced_metrics && (
+            <AdvancedMetricsCard data={dataToDisplay.advanced_metrics} />
+          )}
+          {dataToDisplay.class_wise_analysis && (
+            <ClassWiseAnalysisCard data={dataToDisplay.class_wise_analysis} />
+          )}
+          {dataToDisplay.dataset_comparison && (
+            <DatasetComparisonCard data={dataToDisplay.dataset_comparison} />
+          )}
+        </div>
+      )}
 
       {/* Key Metrics Section - Conditional rendering based on model type */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -2061,6 +2588,208 @@ const PerformancePage: React.FC = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Validation Comparison Section */}
+      {dataToDisplay.validation_comparison && (
+        <motion.div
+          whileHover={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-xl p-6 shadow-md border border-gray-100"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Training vs Validation Comparison
+              </h2>
+              <p className="text-sm text-gray-500">
+                Model Generalization Analysis
+              </p>
+            </div>
+          </div>
+          
+          {/* Training vs Validation Metrics */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Performance Metrics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Training Metrics */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="text-md font-semibold text-blue-800 mb-3">Training Set</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">Accuracy:</span>
+                    <span className="font-medium text-blue-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.accuracy || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">Precision:</span>
+                    <span className="font-medium text-blue-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.precision || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">Recall:</span>
+                    <span className="font-medium text-blue-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.recall || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">F1 Score:</span>
+                    <span className="font-medium text-blue-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.f1 || 0) * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Validation Metrics */}
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="text-md font-semibold text-green-800 mb-3">Validation Set</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">Accuracy:</span>
+                    <span className="font-medium text-green-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.accuracy || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">Precision:</span>
+                    <span className="font-medium text-green-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.precision || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">Recall:</span>
+                    <span className="font-medium text-green-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.recall || 0) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-700">F1 Score:</span>
+                    <span className="font-medium text-green-800">
+                      {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.f1 || 0) * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Gaps */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Performance Gaps</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Accuracy Gap</h4>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatMetricValue(Math.abs((dataToDisplay.validation_comparison?.performance_gaps.accuracy_gap || 0) * 100))}%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(dataToDisplay.validation_comparison?.performance_gaps.accuracy_gap || 0) >= 0 ? 'Training higher' : 'Validation higher'}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Precision Gap</h4>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatMetricValue(Math.abs((dataToDisplay.validation_comparison?.performance_gaps.precision_gap || 0) * 100))}%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(dataToDisplay.validation_comparison?.performance_gaps.precision_gap || 0) >= 0 ? 'Training higher' : 'Validation higher'}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Recall Gap</h4>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatMetricValue(Math.abs((dataToDisplay.validation_comparison?.performance_gaps.recall_gap || 0) * 100))}%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(dataToDisplay.validation_comparison?.performance_gaps.recall_gap || 0) >= 0 ? 'Training higher' : 'Validation higher'}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">F1 Gap</h4>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatMetricValue(Math.abs((dataToDisplay.validation_comparison?.performance_gaps.f1_gap || 0) * 100))}%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(dataToDisplay.validation_comparison?.performance_gaps.f1_gap || 0) >= 0 ? 'Training higher' : 'Validation higher'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Overfitting Indicators */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Overfitting Analysis</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Accuracy Overfitting</h4>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison?.overfitting_indicators.accuracy_overfitting ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                  <span className={`font-medium ${dataToDisplay.validation_comparison?.overfitting_indicators.accuracy_overfitting ? 'text-red-600' : 'text-green-600'}`}>
+                    {dataToDisplay.validation_comparison?.overfitting_indicators.accuracy_overfitting ? 'Detected' : 'Not Detected'}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">F1 Overfitting</h4>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison?.overfitting_indicators.f1_overfitting ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                  <span className={`font-medium ${dataToDisplay.validation_comparison?.overfitting_indicators.f1_overfitting ? 'text-red-600' : 'text-green-600'}`}>
+                    {dataToDisplay.validation_comparison?.overfitting_indicators.f1_overfitting ? 'Detected' : 'Not Detected'}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Overall Overfitting Score</h4>
+                <p className="text-xl font-bold text-gray-900">
+                  {formatMetricValue((dataToDisplay.validation_comparison?.overfitting_indicators.overall_overfitting_score || 0) * 100)}%
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Lower is better</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Generalization Assessment */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Generalization Assessment</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Good Generalization</h4>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison?.generalization_assessment.good_generalization ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                  <span className={`font-medium ${dataToDisplay.validation_comparison?.generalization_assessment.good_generalization ? 'text-green-600' : 'text-gray-600'}`}>
+                    {dataToDisplay.validation_comparison?.generalization_assessment.good_generalization ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Acceptable Generalization</h4>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison?.generalization_assessment.acceptable_generalization ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
+                  <span className={`font-medium ${dataToDisplay.validation_comparison?.generalization_assessment.acceptable_generalization ? 'text-yellow-600' : 'text-gray-600'}`}>
+                    {dataToDisplay.validation_comparison?.generalization_assessment.acceptable_generalization ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Poor Generalization</h4>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison?.generalization_assessment.poor_generalization ? 'bg-red-500' : 'bg-gray-400'}`}></div>
+                  <span className={`font-medium ${dataToDisplay.validation_comparison?.generalization_assessment.poor_generalization ? 'text-red-600' : 'text-gray-600'}`}>
+                    {dataToDisplay.validation_comparison?.generalization_assessment.poor_generalization ? 'Yes' : 'No'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Detailed Classification Report */}
+      {!dataToDisplay.isRegression && dataToDisplay.detailed_classification_report && (
+        <DetailedClassificationReportCard data={dataToDisplay.detailed_classification_report} />
+      )}
     </motion.div>
   ) : (
     <div className="p-8">
@@ -2072,16 +2801,52 @@ const PerformancePage: React.FC = () => {
             transition={{ duration: 0.5 }}
             className="space-y-8"
           >
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Performance Analysis
-              </h1>
-              <p className="text-gray-500 mt-1">
-                Monitor and analyze model performance metrics
-              </p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Performance Analysis
+                </h1>
+                <p className="text-gray-500 mt-1">
+                  Monitor and analyze model performance metrics
+                </p>
+              </div>
+              <div className="flex flex-col items-end space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Select Model:
+                </label>
+                <ModelSelectorDropdown />
+              </div>
             </div>
 
-            {/* Model and Data Info Cards */}
+            {/* Loading state for performance data */}
+            {loadingPerformance && (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teal-600"></div>
+                  <span className="text-gray-600">Loading performance data...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Message when no model is selected */}
+            {!selectedModel && !loadingPerformance && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-blue-900 mb-2">Select a Model</h3>
+                <p className="text-blue-700">
+                  Please select a model from the dropdown above to view its performance analysis.
+                </p>
+              </div>
+            )}
+
+            {/* Performance metrics content - only show when model is selected and not loading */}
+            {selectedModel && !loadingPerformance && performanceMetrics && (
+              <>
+                {/* Model and Data Info Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ModelInfoCard data={dataToDisplay.modelInfo} />
               <DataInfoCard
@@ -2089,6 +2854,21 @@ const PerformancePage: React.FC = () => {
                 isRegression={dataToDisplay.isRegression}
               />
             </div>
+
+            {/* Advanced Analytics Cards - Only for classification */}
+            {!dataToDisplay.isRegression && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {dataToDisplay.advanced_metrics && (
+                  <AdvancedMetricsCard data={dataToDisplay.advanced_metrics} />
+                )}
+                {dataToDisplay.class_wise_analysis && (
+                  <ClassWiseAnalysisCard data={dataToDisplay.class_wise_analysis} />
+                )}
+                {dataToDisplay.dataset_comparison && (
+                  <DatasetComparisonCard data={dataToDisplay.dataset_comparison} />
+                )}
+              </div>
+            )}
 
             {/* Key Metrics Section - Conditional rendering based on model type */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -2515,6 +3295,210 @@ const PerformancePage: React.FC = () => {
                 </div>
               </div>
             </motion.div>
+
+            {/* Validation Comparison Section */}
+            {dataToDisplay.validation_comparison && (
+              <motion.div
+                whileHover={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                transition={{ duration: 0.3 }}
+                className="bg-white rounded-xl p-6 shadow-md border border-gray-100"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Training vs Validation Comparison
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      Model Generalization Analysis
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Training vs Validation Metrics */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Performance Metrics</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Training Metrics */}
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <h4 className="text-md font-semibold text-blue-800 mb-3">Training Set</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Accuracy:</span>
+                          <span className="font-medium text-blue-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.accuracy || 0) * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Precision:</span>
+                          <span className="font-medium text-blue-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.precision || 0) * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Recall:</span>
+                          <span className="font-medium text-blue-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.recall || 0) * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">F1 Score:</span>
+                          <span className="font-medium text-blue-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.training_metrics.f1 || 0) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Validation Metrics */}
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <h4 className="text-md font-semibold text-green-800 mb-3">Validation Set</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Accuracy:</span>
+                          <span className="font-medium text-green-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.accuracy || 0) * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Precision:</span>
+                          <span className="font-medium text-green-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.precision || 0) * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">Recall:</span>
+                          <span className="font-medium text-green-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.recall || 0) * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-700">F1 Score:</span>
+                          <span className="font-medium text-green-800">
+                            {formatMetricValue((dataToDisplay.validation_comparison?.validation_metrics.f1 || 0) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Performance Gaps */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Performance Gaps</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Accuracy Gap</h4>
+                      <p className="text-xl font-bold text-gray-900">
+                        {formatMetricValue(Math.abs(dataToDisplay.validation_comparison.performance_gaps.accuracy_gap * 100))}%
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {dataToDisplay.validation_comparison.performance_gaps.accuracy_gap >= 0 ? 'Training higher' : 'Validation higher'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Precision Gap</h4>
+                      <p className="text-xl font-bold text-gray-900">
+                        {formatMetricValue(Math.abs(dataToDisplay.validation_comparison.performance_gaps.precision_gap * 100))}%
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {dataToDisplay.validation_comparison.performance_gaps.precision_gap >= 0 ? 'Training higher' : 'Validation higher'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Recall Gap</h4>
+                      <p className="text-xl font-bold text-gray-900">
+                        {formatMetricValue(Math.abs(dataToDisplay.validation_comparison.performance_gaps.recall_gap * 100))}%
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {dataToDisplay.validation_comparison.performance_gaps.recall_gap >= 0 ? 'Training higher' : 'Validation higher'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">F1 Gap</h4>
+                      <p className="text-xl font-bold text-gray-900">
+                        {formatMetricValue(Math.abs(dataToDisplay.validation_comparison.performance_gaps.f1_gap * 100))}%
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {dataToDisplay.validation_comparison.performance_gaps.f1_gap >= 0 ? 'Training higher' : 'Validation higher'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Overfitting Indicators */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Overfitting Analysis</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Accuracy Overfitting</h4>
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison.overfitting_indicators.accuracy_overfitting ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                        <span className={`font-medium ${dataToDisplay.validation_comparison.overfitting_indicators.accuracy_overfitting ? 'text-red-600' : 'text-green-600'}`}>
+                          {dataToDisplay.validation_comparison.overfitting_indicators.accuracy_overfitting ? 'Detected' : 'Not Detected'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">F1 Overfitting</h4>
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison.overfitting_indicators.f1_overfitting ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                        <span className={`font-medium ${dataToDisplay.validation_comparison.overfitting_indicators.f1_overfitting ? 'text-red-600' : 'text-green-600'}`}>
+                          {dataToDisplay.validation_comparison.overfitting_indicators.f1_overfitting ? 'Detected' : 'Not Detected'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Overall Overfitting Score</h4>
+                      <p className="text-xl font-bold text-gray-900">
+                        {formatMetricValue(dataToDisplay.validation_comparison.overfitting_indicators.overall_overfitting_score * 100)}%
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">Lower is better</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Generalization Assessment */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Generalization Assessment</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Good Generalization</h4>
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison.generalization_assessment.good_generalization ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <span className={`font-medium ${dataToDisplay.validation_comparison.generalization_assessment.good_generalization ? 'text-green-600' : 'text-gray-600'}`}>
+                          {dataToDisplay.validation_comparison.generalization_assessment.good_generalization ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Acceptable Generalization</h4>
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison.generalization_assessment.acceptable_generalization ? 'bg-yellow-500' : 'bg-gray-400'}`}></div>
+                        <span className={`font-medium ${dataToDisplay.validation_comparison.generalization_assessment.acceptable_generalization ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          {dataToDisplay.validation_comparison.generalization_assessment.acceptable_generalization ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Poor Generalization</h4>
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${dataToDisplay.validation_comparison.generalization_assessment.poor_generalization ? 'bg-red-500' : 'bg-gray-400'}`}></div>
+                        <span className={`font-medium ${dataToDisplay.validation_comparison.generalization_assessment.poor_generalization ? 'text-red-600' : 'text-gray-600'}`}>
+                          {dataToDisplay.validation_comparison.generalization_assessment.poor_generalization ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Detailed Classification Report */}
+            {!dataToDisplay.isRegression && dataToDisplay.detailed_classification_report && (
+              <DetailedClassificationReportCard data={dataToDisplay.detailed_classification_report} />
+            )}
+              </>
+            )}
           </motion.div>
         ) : (
           <UploadModal />
@@ -2523,111 +3507,7 @@ const PerformancePage: React.FC = () => {
     </div>
   );
 
-  return (
-    <AppLayout showSidebar={false} showHeader={false}>
-      {content}
-    </AppLayout>
-  );
+  return content;
 };
 
 export default PerformancePage;
-
-// Get status for R² (higher is better)
-const getR2Status = (value: number) => {
-  if (value >= 0.95) return "Excellent";
-  if (value >= 0.9) return "Good";
-  if (value >= 0.8) return "Above Target";
-  if (value >= 0.7) return "On Target";
-  return "Needs Improvement";
-};
-
-// Get status for error metrics (lower is better)
-const getErrorMetricStatus = (value: number, metricType: string) => {
-  // These thresholds would ideally be dynamic based on the dataset
-  // Using placeholder values that should be adjusted for specific use cases
-
-  // For MSE
-  if (metricType === "MSE") {
-    if (value < 50) return "Excellent";
-    if (value < 100) return "Good";
-    if (value < 200) return "Above Target";
-    if (value < 400) return "On Target";
-    return "Needs Improvement";
-  }
-
-  // For RMSE
-  if (metricType === "RMSE") {
-    if (value < 5) return "Excellent";
-    if (value < 10) return "Good";
-    if (value < 15) return "Above Target";
-    if (value < 20) return "On Target";
-    return "Needs Improvement";
-  }
-
-  // For MAE
-  if (metricType === "MAE") {
-    if (value < 4) return "Excellent";
-    if (value < 8) return "Good";
-    if (value < 12) return "Above Target";
-    if (value < 16) return "On Target";
-    return "Needs Improvement";
-  }
-
-  return "Not Available";
-};
-
-const ResidualPlot = ({ residuals }: { residuals: number[] }) => (
-  <div className="w-full h-full">
-    <div className="flex items-center justify-between mb-2">
-      <h3 className="text-sm font-medium text-gray-700">Residual Analysis</h3>
-      <InfoTooltip
-        title="About Residual Analysis"
-        entityType="chart"
-        entityName="Residual Analysis"
-        data={{
-          chartData: residuals.map((residual, index) => ({ index, residual })),
-        }}
-      />
-    </div>
-    <div className="h-[280px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 40 }}>
-          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-          <XAxis
-            type="number"
-            dataKey="index"
-            name="Sample Index"
-            label={{
-              value: "Sample Index",
-              position: "insideBottomRight",
-              offset: -10,
-            }}
-          />
-          <YAxis
-            type="number"
-            dataKey="residual"
-            name="Residual"
-            label={{ value: "Residual", angle: -90, position: "insideLeft" }}
-          />
-          <Tooltip
-            formatter={(value: any) => [value.toFixed(2), "Residual"]}
-            labelFormatter={(value) => `Sample: ${value}`}
-            contentStyle={{
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              borderRadius: "8px",
-              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-              border: "1px solid #E5E7EB",
-            }}
-          />
-          <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
-          <Scatter
-            name="Residuals"
-            data={residuals.map((residual, index) => ({ index, residual }))}
-            fill="#8884d8"
-            opacity={0.6}
-          />
-        </ScatterChart>
-      </ResponsiveContainer>
-    </div>
-  </div>
-);

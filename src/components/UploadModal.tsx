@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { FaGithub } from "react-icons/fa";
 import { CheckCircle } from "lucide-react";
+import { apiUrl } from "../lib/api-config";
 
 // Initialize supabase client
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || "";
@@ -40,8 +41,10 @@ const UploadModal = ({
     requirements_file: null as File | null,
     model_stage: "",
     validation_dataset: null as File | null,
+    test_dataset: null as File | null,
     target_column: "",
     validation_target_column: "",
+    test_target_column: "",
     use_synthetic_validation: false,
     synthetic_validation_params: {
       noise_level: 0.1,
@@ -68,6 +71,15 @@ const UploadModal = ({
     }
   }, [projectId]);
 
+  // Debug: Monitor formData changes
+  useEffect(() => {
+    console.log("FormData changed:", {
+      test_dataset: formData.test_dataset?.name || null,
+      validation_dataset: formData.validation_dataset?.name || null,
+      dataset: formData.dataset?.name || null,
+    });
+  }, [formData.test_dataset, formData.validation_dataset, formData.dataset]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any>(null);
@@ -75,13 +87,19 @@ const UploadModal = ({
   // Add states for dataset analysis
   const [datasetColumns, setDatasetColumns] = useState<string[]>([]);
   const [validationDatasetColumns, setValidationDatasetColumns] = useState<string[]>([]);
+  const [testDatasetColumns, setTestDatasetColumns] = useState<string[]>([]);
   const [productionDatasetColumns, setProductionDatasetColumns] = useState<string[]>([]);
   const [isAnalyzingDataset, setIsAnalyzingDataset] = useState(false);
   const [isAnalyzingValidationDataset, setIsAnalyzingValidationDataset] = useState(false);
+  const [isAnalyzingTestDataset, setIsAnalyzingTestDataset] = useState(false);
   const [isAnalyzingProductionDataset, setIsAnalyzingProductionDataset] = useState(false);
   const [datasetAnalysisError, setDatasetAnalysisError] = useState<string>("");
   const [validationAnalysisError, setValidationAnalysisError] = useState<string>("");
+  const [testAnalysisError, setTestAnalysisError] = useState<string>("");
   const [productionAnalysisError, setProductionAnalysisError] = useState<string>("");
+  
+  // State for unsupported framework popup
+  const [showUnsupportedFrameworkModal, setShowUnsupportedFrameworkModal] = useState(false);
 
   const [showAnalysisAnimation, setShowAnalysisAnimation] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -125,7 +143,7 @@ const UploadModal = ({
     if (accessToken) {
       try {
         const response = await fetch(
-          "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getUserRepos",
+          apiUrl("getUserRepos"),
           {
             method: "GET",
             headers: {
@@ -151,9 +169,9 @@ const UploadModal = ({
     if (selectedRepo && accessToken) {
       const path = pathStack.join("/");
       fetch(
-        `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getRepoContents?repo=${encodeURIComponent(
+        apiUrl(`getRepoContents?repo=${encodeURIComponent(
           selectedRepo
-        )}${path ? `&path=${encodeURIComponent(path)}` : ""}`,
+        )}${path ? `&path=${encodeURIComponent(path)}` : ""}`),
         {
           method: "GET",
           headers: {
@@ -198,12 +216,8 @@ const UploadModal = ({
     }
   };
 
-  // Fix the process.env reference issue
-  const baseUrl =
-    import.meta.env?.VITE_API_BASE_URL ||
-    "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
-  // If you're using Create React App instead of Vite, use this:
-  // const baseUrl = window.env?.REACT_APP_API_BASE_URL || 'https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/api';
+  // Use centralized API configuration
+  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "/api";
 
   // Send a signal to parent component to show animation on the page
   const emitProcessingSignal = (status: string, data = {}) => {
@@ -319,6 +333,14 @@ const UploadModal = ({
   };
 
   const handleSubmit = async () => {
+    // Debug: Log formData state at submission
+    console.log("=== FORM SUBMISSION DEBUG ===");
+    console.log("Full formData at submission:", formData);
+    console.log("Test dataset:", formData.test_dataset);
+    console.log("Validation dataset:", formData.validation_dataset);
+    console.log("Training dataset:", formData.dataset);
+    console.log("=============================");
+    
     // Set loading state and clear errors
     setIsLoading(true);
     setApiError(null);
@@ -395,8 +417,6 @@ const UploadModal = ({
       modelFormData.append("model_type", formData.model_type);
       modelFormData.append("version", formData.version);
       modelFormData.append("file", fileToUpload);
-      modelFormData.append("framework", formData.framework);
-      modelFormData.append("model_stage", formData.model_stage);
       if (formData.description) {
         modelFormData.append("description", formData.description);
       }
@@ -430,188 +450,68 @@ const UploadModal = ({
       const modelId = modelData.id;
       localStorage.setItem("model_id", modelId.toString());
 
-      // STEP 2: Upload dataset (training + validation together) - updated API endpoint
-      let datasetId = null;
-      let validationDatasetId = null;
-
-      if (formData.dataset) {
-        console.log("Step 2: Uploading training dataset...");
-        const datasetFormData = new FormData();
-        datasetFormData.append("file", formData.dataset);
-        datasetFormData.append("project_id", p_id || "");
-        datasetFormData.append("dataset_name", "training_data");
-        datasetFormData.append("target_column", formData.target_column);
-        if (formData.dataset_type) {
-          datasetFormData.append(
-            "dataset_type",
-            formData.dataset_type.toLowerCase()
-          );
-        }
-        const datasetResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/datasets/upload`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            body: datasetFormData,
-          }
-        );
-        if (!datasetResponse.ok) {
-          throw new Error(
-            `Error uploading dataset: ${datasetResponse.statusText}`
-          );
-        }
-        const datasetData = await datasetResponse.json();
-        console.log("Dataset upload successful:", datasetData);
-        datasetId = datasetData.id;
-        localStorage.setItem("dataset_id", datasetId);
+      // STEP 2: Upload dataset with validation dataset - new combined approach
+      console.log("Step 2: Uploading datasets...");
+      const datasetFormData = new FormData();
+      
+      // Add required fields
+      datasetFormData.append("project_id", p_id || "");
+      datasetFormData.append("file", formData.dataset); // training dataset
+      
+      // Add dataset type if provided
+      if (formData.dataset_type) {
+        datasetFormData.append("dataset_type", formData.dataset_type.toLowerCase());
       }
-
-      // Upload validation dataset if provided
+      
+      // Add validation dataset if provided
       if (formData.validation_dataset) {
-        console.log("Step 2.1: Uploading validation dataset file...");
-        const validationFormData = new FormData();
-        validationFormData.append("file", formData.validation_dataset);
-        validationFormData.append("project_id", p_id || "");
-        validationFormData.append("dataset_name", "validation_data");
-        if (formData.validation_target_column) {
-          validationFormData.append("target_column", formData.validation_target_column);
-        }
-        if (formData.dataset_type) {
-          validationFormData.append(
-            "dataset_type",
-            formData.dataset_type.toLowerCase()
-          );
-        }
+        datasetFormData.append("validation_data", formData.validation_dataset);
+        console.log("Validation dataset added:", formData.validation_dataset.name);
+      }
 
-        const validationResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/datasets/upload`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            body: validationFormData,
-          }
+      if (formData.test_dataset) {
+        datasetFormData.append("testdataset", formData.test_dataset);
+        console.log("Test dataset added:", formData.test_dataset.name);
+      } else {
+        console.log("No test dataset found in formData");
+      }
+
+      // Debug: Log all FormData entries
+      console.log("FormData entries:");
+      for (let [key, value] of datasetFormData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      
+      console.log("Full formData object:", formData);
+      console.log("Test dataset specifically:", formData.test_dataset);
+      const datasetResponse = await fetch(
+        `${baseUrl}/ml/${p_id}/datasets/upload`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: datasetFormData,
+        }
+      );
+      
+      if (!datasetResponse.ok) {
+        throw new Error(
+          `Error uploading dataset: ${datasetResponse.statusText}`
         );
-
-        if (!validationResponse.ok) {
-          throw new Error(
-            `Error uploading validation dataset: ${validationResponse.statusText}`
-          );
-        }
-
-        const validationData = await validationResponse.json();
-        console.log("Validation dataset upload successful:", validationData);
-
-        // Store validation dataset ID in localStorage
-        validationDatasetId = validationData.id;
-        localStorage.setItem("validation_dataset_id", validationDatasetId);
-        localStorage.setItem("is_synthetic_validation", "false");
       }
-
-      // Handle synthetic validation if no validation dataset was uploaded
-      if (!formData.validation_dataset && formData.use_synthetic_validation) {
-        // Generate synthetic validation data
-        console.log("Step 2.2: Generating synthetic validation dataset...");
-        const syntheticDataPayload = {
-          project_id: p_id,
-          training_dataset_id: datasetId,
-          target_column: formData.target_column,
-          synthetic_params: formData.synthetic_validation_params,
-          dataset_type: formData.dataset_type?.toLowerCase(),
-        };
-
-        const syntheticResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/datasets/generate-synthetic-validation`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(syntheticDataPayload),
-          }
-        );
-
-        if (!syntheticResponse.ok) {
-          throw new Error(
-            `Error generating synthetic validation dataset: ${syntheticResponse.statusText}`
-          );
-        }
-
-        const syntheticData = await syntheticResponse.json();
-        console.log("Synthetic validation dataset generation successful:", syntheticData);
-
-        // Store synthetic validation dataset ID in localStorage
-        validationDatasetId = syntheticData.id;
-        localStorage.setItem("validation_dataset_id", validationDatasetId);
-        localStorage.setItem("is_synthetic_validation", "true");
-      }
-
-      // Upload production dataset if drift analysis is enabled
-      let productionDatasetId = null;
-      if (formData.enable_drift_analysis && formData.production_dataset) {
-        console.log("Step 2.2: Uploading production dataset file...");
-        const productionFormData = new FormData();
-        productionFormData.append("file", formData.production_dataset);
-        productionFormData.append("project_id", p_id || "");
-        productionFormData.append("dataset_name", "production_data");
-        if (formData.production_target_column) {
-          productionFormData.append("target_column", formData.production_target_column);
-        }
-
-        if (formData.dataset_type) {
-          productionFormData.append(
-            "dataset_type",
-            formData.dataset_type.toLowerCase()
-          );
-        }
-
-        const productionResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/datasets/upload`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            body: productionFormData,
-          }
-        );
-
-        if (!productionResponse.ok) {
-          throw new Error(
-            `Error uploading production dataset: ${productionResponse.statusText}`
-          );
-        }
-
-        const productionData = await productionResponse.json();
-        console.log("Production dataset upload successful:", productionData);
-
-        // Store production dataset ID in localStorage
-        productionDatasetId = productionData.id;
-        localStorage.setItem("production_dataset_id", productionDatasetId);
-      }
-
-      const { error: supabaseError } = await supabase
-        .from("modeldetails")
-        .insert({
-          model_id: modelId,
-          project_id: p_id,
-          dataset_id: datasetId,
-          model_version: formData.version,
-        });
-
-      if (supabaseError) {
-        console.error("Error storing in Supabase:", supabaseError);
-        // Continue execution even if Supabase storage fails
-      }
-
+      
+      const datasetData = await datasetResponse.json();
+      console.log("Dataset upload successful:", datasetData);
+      localStorage.setItem("dataset_id", datasetData.id);
+      localStorage.setItem("validation_dataset_id", datasetData.dataset_metadata.validation_dataset_id);
+      localStorage.setItem("test_dataset_id", datasetData.dataset_metadata.test_dataset_id);
       // STEP 3: Generate report - keeping original API endpoint
       console.log("Step 3: Generating report...");
       console.log(modelId);
-      console.log(datasetId);
+      console.log(datasetData.id);
+      console.log(datasetData.dataset_metadata.validation_dataset_id);
+      console.log(datasetData.dataset_metadata.test_dataset_id);
 
       // Replace with 4 separate API calls
       // Run all four audit API calls sequentially, regardless of success/failure
@@ -622,7 +522,7 @@ const UploadModal = ({
       try {
         console.log("Step 3.1: Running Performance Audit...");
         const performanceResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/audit/performance?model_id=${modelId}&dataset_id=${datasetId}`,
+          `${baseUrl}/ml/${p_id}/audit/performance?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`,
           {
             method: "POST",
             headers: {
@@ -646,7 +546,7 @@ const UploadModal = ({
       try {
         console.log("Step 3.2: Running Fairness Audit...");
         const fairnessResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/audit/fairness?model_id=${modelId}&dataset_id=${datasetId}`,
+          `${baseUrl}/ml/${p_id}/audit/fairness?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`,
           {
             method: "POST",
             headers: {
@@ -670,7 +570,7 @@ const UploadModal = ({
       try {
         console.log("Step 3.3: Running Explainability Audit...");
         const explainabilityResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/audit/explainability?model_id=${modelId}&dataset_id=${datasetId}`,
+          `${baseUrl}/ml/${p_id}/audit/explainability?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`,
           {
             method: "POST",
             headers: {
@@ -691,11 +591,11 @@ const UploadModal = ({
       }
 
       // 4. Drift Analysis - Only run if production dataset was actually uploaded
-      if (formData.enable_drift_analysis && formData.production_dataset && productionDatasetId) {
+      if (formData.enable_drift_analysis && formData.production_dataset) {
         try {
           console.log("Step 3.4: Running Drift Analysis with production data...");
           const driftResponse = await fetch(
-            `${baseUrl}/ml/${p_id}/audit/drift?model_id=${modelId}&dataset_id=${productionDatasetId}`,
+            `${baseUrl}/ml/${p_id}/audit/drift?model_id=${modelId}&dataset_id=${datasetData.id}`,
             {
               method: "POST",
               headers: {
@@ -737,6 +637,30 @@ const UploadModal = ({
       // Update states with aggregated results
       setReportData(aggregatedResults);
       setFormData({ ...formData, reportGenerated: true });
+
+      // Insert model details into Supabase
+      try {
+        const { data: insertData, error: insertError } = await supabase
+          .from('modeldetails')
+          .insert([
+            {
+              model_id: modelId,
+              project_id: p_id,
+              model_version: formData.version,
+              dataset_id: datasetData.id,
+              validation_dataset_id: datasetData.dataset_metadata.validation_dataset_id || null,
+              test_dataset_id: datasetData.dataset_metadata.test_dataset_id || null
+            }
+          ]);
+
+        if (insertError) {
+          console.error('Error inserting model details:', insertError);
+        } else {
+          console.log('Model details inserted successfully:', insertData);
+        }
+      } catch (error) {
+        console.error('Failed to insert model details into Supabase:', error);
+      }
 
       // Trigger success event
       const successEvent = new CustomEvent("modelProcessingSuccess", {
@@ -794,10 +718,13 @@ const UploadModal = ({
   };
 
   // Function to analyze dataset and extract columns
-  const analyzeDataset = async (file: File, datasetType: 'training' | 'validation' | 'production' = 'training') => {
+  const analyzeDataset = async (file: File, datasetType: 'training' | 'validation' | 'test' | 'production' = 'training') => {
     if (datasetType === 'validation') {
       setIsAnalyzingValidationDataset(true);
       setValidationAnalysisError("");
+    } else if (datasetType === 'test') {
+      setIsAnalyzingTestDataset(true);
+      setTestAnalysisError("");
     } else if (datasetType === 'production') {
       setIsAnalyzingProductionDataset(true);
       setProductionAnalysisError("");
@@ -844,6 +771,8 @@ const UploadModal = ({
       // Update state based on dataset type
       if (datasetType === 'validation') {
         setValidationDatasetColumns(columns);
+      } else if (datasetType === 'test') {
+        setTestDatasetColumns(columns);
       } else if (datasetType === 'production') {
         setProductionDatasetColumns(columns);
       } else {
@@ -854,6 +783,9 @@ const UploadModal = ({
       if (datasetType === 'validation') {
         setValidationAnalysisError(errorMessage);
         setValidationDatasetColumns([]);
+      } else if (datasetType === 'test') {
+        setTestAnalysisError(errorMessage);
+        setTestDatasetColumns([]);
       } else if (datasetType === 'production') {
         setProductionAnalysisError(errorMessage);
         setProductionDatasetColumns([]);
@@ -864,6 +796,8 @@ const UploadModal = ({
     } finally {
       if (datasetType === 'validation') {
         setIsAnalyzingValidationDataset(false);
+      } else if (datasetType === 'test') {
+        setIsAnalyzingTestDataset(false);
       } else if (datasetType === 'production') {
         setIsAnalyzingProductionDataset(false);
       } else {
@@ -878,17 +812,26 @@ const UploadModal = ({
     fileType: string
   ) => {
     const file = e.target.files?.[0];
+    console.log(`handleFileUpload called with fileType: ${fileType}`, file);
+    
     if (file) {
-      setFormData({
+      const newFormData = {
         ...formData,
         [fileType]: file,
-      });
+      };
+      
+      console.log(`Setting ${fileType} to:`, file.name);
+      console.log('Updated formData will be:', newFormData);
+      
+      setFormData(newFormData);
 
       // Analyze dataset if it's a dataset file
       if (fileType === 'dataset') {
         await analyzeDataset(file, 'training');
       } else if (fileType === 'validation_dataset') {
         await analyzeDataset(file, 'validation');
+      } else if (fileType === 'test_dataset') {
+        await analyzeDataset(file, 'test');
       } else if (fileType === 'production_dataset') {
         await analyzeDataset(file, 'production');
       }
@@ -1543,20 +1486,56 @@ const UploadModal = ({
                     <select
                       className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white text-lg"
                       value={formData.framework || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, framework: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const selectedFramework = e.target.value;
+                        setFormData({ ...formData, framework: selectedFramework });
+                        
+                        // Show popup if "Others" is selected
+                        if (selectedFramework === "others") {
+                          setShowUnsupportedFrameworkModal(true);
+                        }
+                      }}
                       required
                     >
                       <option value="" disabled>
                         Select framework
                       </option>
-                      <option value="scikit-learn">Scikit-learn</option>
-                      <option value="tensorflow">TensorFlow</option>
-                      <option value="keras">Keras</option>
-                      <option value="pytorch">PyTorch</option>
-                      <option value="onnx">ONNX</option>
+                      <option value="scikit-learn==1.6.1">Scikit-learn v1.6.1</option>
+                      <option value="tensorflow==2.19.0">TensorFlow v2.19.0</option>
+                      <option value="torch==2.6.0">PyTorch v2.6.0</option>
+                      <option value="transformers==4.50.3">Transformers v4.50.3</option>
+                      <option value="onnx">ONNX (latest)</option>
+                      <option value="others">Others</option>
                     </select>
+                    {formData.framework === "others" && (
+                      <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg
+                              className="h-5 w-5 text-orange-400"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-orange-800">
+                              Framework Not Supported
+                            </h3>
+                            <div className="mt-2 text-sm text-orange-700">
+                              <p>
+                                Please select a supported framework from the list above, or contact our support team for assistance with your specific framework.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Model Stage */}
@@ -1606,14 +1585,14 @@ const UploadModal = ({
                   </div>
                 </div>
 
-                {/* External Dependencies - Testing Coming Soon */}
+                {/* External Dependencies - Premium Feature */}
                 <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 relative overflow-hidden">
                   <div className="absolute top-3 right-3">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
                       <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.894.553l2.991 5.982a.869.869 0 010 .775l-2.991 5.982A1 1 0 0112 16H9a1 1 0 01-.894-1.447L10.382 11H9a1 1 0 010-2h1.382l-2.276-3.553A1 1 0 019 4h3z" clipRule="evenodd" />
                       </svg>
-                      Testing Coming Soon
+                      Premium Feature
                     </span>
                   </div>
                   <div className="opacity-50 pointer-events-none">
@@ -1647,22 +1626,18 @@ const UploadModal = ({
                       Describe any external dependencies or special requirements
                     </p>
                   </div>
-                  <div className="absolute inset-0 bg-gray-200 bg-opacity-10 flex items-center justify-center">
-                    <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-                      <span className="text-gray-600 font-medium">External Dependencies - Testing Coming Soon</span>
-                    </div>
-                  </div>
+
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Environment Configuration - Testing Coming Soon */}
+                  {/* Environment Configuration - Premium Feature */}
                   <div className="bg-gradient-to-r from-gray-100 to-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 relative overflow-hidden">
                     <div className="absolute top-3 right-3">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
                         <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                          <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.894.553l2.991 5.982a.869.869 0 010 .775l-2.991 5.982A1 1 0 0112 16H9a1 1 0 01-.894-1.447L10.382 11H9a1 1 0 010-2h1.382l-2.276-3.553A1 1 0 019 4h3z" clipRule="evenodd" />
                         </svg>
-                        Testing Coming Soon
+                        Premium Feature
                       </span>
                     </div>
                     <div className="opacity-50 pointer-events-none">
@@ -1698,11 +1673,7 @@ const UploadModal = ({
                         </p>
                       </div>
                     </div>
-                    <div className="absolute inset-0 bg-gray-200 bg-opacity-10 flex items-center justify-center">
-                      <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-                        <span className="text-gray-600 font-medium">Environment Configuration - Testing Coming Soon</span>
-                      </div>
-                    </div>
+
                   </div>
 
                   {/* Model File upload section */}
@@ -1843,38 +1814,218 @@ const UploadModal = ({
 
                     {(formData.model_stage === "in_training" || formData.model_stage === "post_training" || formData.model_stage === "experimental") && (
                       <div className="space-y-6">
-                        {/* Validation Dataset - Coming Soon */}
-                        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200 flex items-center justify-between">
-                          <div>
+                        {/* Validation Dataset Upload */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
                           <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
-                              Validation Dataset
-                              <span className="ml-2 text-sm font-normal text-gray-500">(Coming Soon)</span>
-                          </label>
-                            <p className="text-gray-500 text-sm mb-2">
-                              Uploading a separate validation dataset will be available soon. For now, only training dataset upload is supported.
-                            </p>
+                            Validation Dataset
+                            <span className="text-gray-500 ml-2 text-sm font-normal">(Optional)</span>
+                            <div className="relative ml-2 group">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-64 bg-gray-800 text-white text-xs rounded py-2 px-3 hidden group-hover:block z-10">
+                                Upload a separate validation dataset for model evaluation. If not provided, the system will use automatic validation splitting.
                               </div>
-                          <div className="flex items-center">
-                            <span className="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 text-sm rounded-full font-medium">
-                              <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 8 8">
+                            </div>
+                          </label>
+                          <p className="text-sm text-gray-500 mb-4">
+                            Upload CSV, JSON, or DataFrame file for validation
+                          </p>
+                          <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
+                            <input
+                              type="file"
+                              id="validation_dataset"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, "validation_dataset")}
+                            />
+                            <label
+                              htmlFor="validation_dataset"
+                              className="cursor-pointer w-full h-full flex flex-col items-center"
+                            >
+                              <div className="text-blue-500 text-4xl mb-3">
+                                {formData.validation_dataset ? "📊" : "⬆️"}
+                              </div>
+                              <p className="text-gray-700 font-medium mb-2">
+                                {formData.validation_dataset
+                                  ? "Change validation dataset"
+                                  : "Upload validation dataset"}
+                              </p>
+                              <p className="text-gray-500">
+                                {formData.validation_dataset
+                                  ? formData.validation_dataset.name
+                                  : "Click or drag validation data file here"}
+                              </p>
+                              {formData.validation_dataset && (
+                                <span className="mt-3 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 text-sm rounded-full font-medium">
+                                  <svg
+                                    className="h-3 w-3 mr-2"
+                                    fill="currentColor"
+                                    viewBox="0 0 8 8"
+                                  >
                                     <circle cx="4" cy="4" r="3" />
                                   </svg>
-                              Coming Soon
+                                  Validation dataset selected
                                 </span>
+                              )}
+                            </label>
                           </div>
-                        </div>
-                        {/* Synthetic Validation Data Option - hide for now */}
-                              </div>
-                            )}
-                          </div>
-                          // Add this section right after the training dataset upload in step 1
-// Replace the existing target column selection with this improved version
 
-{/* Target Column Selection - Always show if dataset is uploaded */}
+                          {/* Show loading state while analyzing validation dataset */}
+                          {isAnalyzingValidationDataset && (
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-center mt-4">
+                              <svg className="animate-spin h-5 w-5 mr-3 text-blue-600" viewBox="0 0 24 24">
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                              <span className="text-blue-700">Analyzing validation dataset structure...</span>
+                            </div>
+                          )}
+
+                          {/* Show error if validation dataset analysis failed */}
+                          {validationAnalysisError && (
+                            <div className="bg-red-50 p-4 rounded-lg border border-red-200 mt-4">
+                              <p className="text-red-700 text-sm">
+                                <strong>Validation Dataset Analysis Error:</strong> {validationAnalysisError}
+                              </p>
+                              <p className="text-red-600 text-xs mt-1">
+                                Please ensure your file is a valid CSV or JSON format, or manually enter the validation target column name below.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Test Dataset Upload */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
+                          <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
+                            Test Dataset
+                            <span className="text-gray-500 ml-2 text-sm font-normal">(Optional)</span>
+                            <div className="relative ml-2 group">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-64 bg-gray-800 text-white text-xs rounded py-2 px-3 hidden group-hover:block z-10">
+                                Upload a separate test dataset for final model evaluation and performance assessment.
+                              </div>
+                            </div>
+                          </label>
+                          <p className="text-sm text-gray-500 mb-4">
+                            Upload CSV, JSON, or DataFrame file for testing
+                          </p>
+                          <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center bg-gray-50 hover:bg-blue-50 hover:border-blue-300 transition cursor-pointer">
+                            <input
+                              type="file"
+                              id="test_dataset"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, "test_dataset")}
+                            />
+                            <label
+                              htmlFor="test_dataset"
+                              className="cursor-pointer w-full h-full flex flex-col items-center"
+                            >
+                              <div className="text-blue-500 text-4xl mb-3">
+                                {formData.test_dataset ? "📊" : "⬆️"}
+                              </div>
+                              <p className="text-gray-700 font-medium mb-2">
+                                {formData.test_dataset
+                                  ? "Change test dataset"
+                                  : "Upload test dataset"}
+                              </p>
+                              <p className="text-gray-500">
+                                {formData.test_dataset
+                                  ? formData.test_dataset.name
+                                  : "Click or drag test data file here"}
+                              </p>
+                              {formData.test_dataset && (
+                                <span className="mt-3 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 text-sm rounded-full font-medium">
+                                  <svg
+                                    className="h-3 w-3 mr-2"
+                                    fill="currentColor"
+                                    viewBox="0 0 8 8"
+                                  >
+                                    <circle cx="4" cy="4" r="3" />
+                                  </svg>
+                                  Test dataset selected
+                                </span>
+                              )}
+                            </label>
+                          </div>
+
+                          {/* Show loading state while analyzing test dataset */}
+                          {isAnalyzingTestDataset && (
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-center mt-4">
+                              <svg className="animate-spin h-5 w-5 mr-3 text-blue-600" viewBox="0 0 24 24">
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                              <span className="text-blue-700">Analyzing test dataset structure...</span>
+                            </div>
+                          )}
+
+                          {/* Show error if test dataset analysis failed */}
+                          {testAnalysisError && (
+                            <div className="bg-red-50 p-4 rounded-lg border border-red-200 mt-4">
+                              <p className="text-red-700 text-sm">
+                                <strong>Test Dataset Analysis Error:</strong> {testAnalysisError}
+                              </p>
+                              <p className="text-red-600 text-xs mt-1">
+                                Please ensure your file is a valid CSV or JSON format, or manually enter the test target column name below.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+{/* Target Column Selection - Always show if main dataset is uploaded */}
 {formData.dataset && (
   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
     <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
-      Target Column <span className="text-red-500 ml-2">*</span>
+      Target Column ( Dataset) <span className="text-red-500 ml-2">*</span>
       <div className="relative ml-2 group">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -1890,8 +2041,8 @@ const UploadModal = ({
             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 hidden group-hover:block z-10">
-          Select the column you want to predict (target variable)
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-60 bg-gray-800 text-white text-xs rounded py-2 px-3 hidden group-hover:block z-10">
+          Select the column you want to predict in your main training dataset (target variable)
         </div>
       </div>
     </label>
@@ -2023,12 +2174,16 @@ const UploadModal = ({
   </div>
 )}
 
+
+
+
+
 {/* Dataset Type Selection */}
 {formData.dataset && (
   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
     <label className="block font-medium mb-3 text-gray-700 text-lg flex items-center">
       Dataset Type
-      <span className="ml-3 text-sm font-normal text-gray-500">(Optional)</span>
+      <span className="ml-3 text-sm font-normal text-gray-500"></span>
       <div className="relative ml-2 group">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -2056,10 +2211,10 @@ const UploadModal = ({
         setFormData({ ...formData, dataset_type: e.target.value })
       }
     >
-      <option value="">Select dataset type (optional)</option>
-      <option value="tabular">Tabular</option>
-      <option value="text">Text</option>
-      <option value="json">JSON</option>
+      <option value="">Select dataset type </option>
+      <option value="tabular">CSV, Excel, TSV - Tabular Data</option>
+      <option value="text">TXT, DOC, PDF - Text Data</option>
+      <option value="json">JSON, JSONL - Structured Data</option>
     </select>
     <p className="text-sm text-gray-500 mt-2">
       This helps optimize the analysis for your specific use case
@@ -2742,7 +2897,7 @@ const UploadModal = ({
                 <button
                   onClick={handleNext}
                   className="px-8 py-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center shadow-lg disabled:bg-blue-300 disabled:cursor-not-allowed text-lg"
-                  disabled={isLoading}
+                  disabled={isLoading || formData.framework === "others"}
                 >
                   Next
                   <svg
@@ -2815,6 +2970,75 @@ const UploadModal = ({
           </div>
         </div>
       </div>
+
+      {/* Unsupported Framework Modal */}
+      {showUnsupportedFrameworkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 mb-4">
+                <svg
+                  className="h-6 w-6 text-orange-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 20.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Framework Not Supported
+              </h3>
+              <div className="mb-6">
+                <p className="text-sm text-gray-600 mb-4">
+                  The framework you selected is currently not supported by our platform.
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Supported Frameworks & Versions:</h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <div>• Scikit-learn v1.6.1</div>
+                    <div>• TensorFlow v2.19.0</div>
+                    <div>• TF-Keras (latest)</div>
+                    <div>• PyTorch v2.6.0</div>
+                    <div>• Transformers v4.50.3</div>
+                    <div>• ONNX (latest)</div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">
+                  If you have a model supported by our product and framework version, please{" "}
+                  <span className="font-medium text-blue-600">contact our support team</span> for assistance.
+                </p>
+              </div>
+              <div className="flex space-x-4 justify-center">
+                <button
+                  onClick={() => {
+                    setShowUnsupportedFrameworkModal(false);
+                    setFormData({ ...formData, framework: "" }); // Reset framework selection
+                  }}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUnsupportedFrameworkModal(false);
+                    // You can add support team contact logic here
+                    window.open('mailto:support@yourcompany.com?subject=Framework Support Request', '_blank');
+                  }}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Contact Support
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

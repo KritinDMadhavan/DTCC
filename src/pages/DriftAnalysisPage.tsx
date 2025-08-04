@@ -140,7 +140,7 @@ const useModelsExist = (projectId: string) => {
       try {
         const accessToken = localStorage.getItem("access_token");
         const baseUrl = import.meta.env?.VITE_API_BASE_URL || 
-          "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
+          "http://localhost:8000";
 
         const apiUrl = `${baseUrl}/ml/${id}/models/list`;
         console.log("Models API URL:", apiUrl);
@@ -234,7 +234,7 @@ const useDriftAnalysisData = (projectId: string) => {
         // Fetch drift analysis from API
         const accessToken = localStorage.getItem("access_token");
 
-        const apiUrl = `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/drift/${projectId}/${modelId}/${model_version}`;
+        const apiUrl = `http://localhost:8000/ml/drift/${projectId}/${modelId}/${model_version}`;
 
         const response = await fetch(apiUrl, {
           headers: {
@@ -664,7 +664,7 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
   const [uploadProgress, setUploadProgress] = useState<string>('');
 
   const baseUrl = import.meta.env?.VITE_API_BASE_URL || 
-    "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
+    "http://localhost:8000";
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
