@@ -217,7 +217,6 @@ const UploadModal = ({
   };
 
   // Use centralized API configuration
-  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "/api";
 
   // Send a signal to parent component to show animation on the page
   const emitProcessingSignal = (status: string, data = {}) => {
@@ -307,10 +306,14 @@ const UploadModal = ({
         setStepError("Please select a target column");
         return;
       }
-      // Move to next step without API call
-      setCurrentStep(currentStep + 1);
+      // If model stage is production, move to drift analysis step; otherwise skip to final step
+      if (formData.model_stage === "production") {
+        setCurrentStep(currentStep + 1);
+      } else {
+        setCurrentStep(currentStep + 2); // Skip drift analysis step
+      }
     } else if (currentStep === 2) {
-      // Drift analysis step validation
+      // Drift analysis step validation (only for production models)
       if (formData.enable_drift_analysis) {
         if (!formData.production_dataset) {
           setStepError("Please upload production dataset for drift analysis");
@@ -329,7 +332,12 @@ const UploadModal = ({
   };
 
   const handlePrev = () => {
-    setCurrentStep(currentStep - 1);
+    // If we're on the final step and model stage is not production, skip back over drift analysis
+    if (currentStep === 3 && formData.model_stage !== "production") {
+      setCurrentStep(currentStep - 2); // Skip drift analysis step
+    } else {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSubmit = async () => {
@@ -365,9 +373,9 @@ const UploadModal = ({
         const repoName = repo + "/" + pathParts.shift();
         const filePath = pathParts.join("/");
         const githubToken = localStorage.getItem("accessToken");
-        const downloadUrl = `${baseUrl}/downloadRepoFile?repo=${encodeURIComponent(
+        const downloadUrl = apiUrl(`downloadRepoFile?repo=${encodeURIComponent(
           repoName
-        )}&path=${encodeURIComponent(filePath)}`;
+        )}&path=${encodeURIComponent(filePath)}`);
         const response = await fetch(downloadUrl, {
           method: "GET",
           headers: {
@@ -427,7 +435,7 @@ const UploadModal = ({
         modelFormData.append("requirements_file", formData.requirements_file);
       }
 
-      const modelResponse = await fetch(`${baseUrl}/ml/${p_id}/models/upload`, {
+      const modelResponse = await fetch(apiUrl(`ml/${p_id}/models/upload`), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -485,7 +493,7 @@ const UploadModal = ({
       console.log("Full formData object:", formData);
       console.log("Test dataset specifically:", formData.test_dataset);
       const datasetResponse = await fetch(
-        `${baseUrl}/ml/${p_id}/datasets/upload`,
+        apiUrl(`ml/${p_id}/datasets/upload`),
         {
           method: "POST",
           headers: {
@@ -522,7 +530,7 @@ const UploadModal = ({
       try {
         console.log("Step 3.1: Running Performance Audit...");
         const performanceResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/audit/performance?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`,
+          apiUrl(`ml/${p_id}/audit/performance?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`),
           {
             method: "POST",
             headers: {
@@ -546,7 +554,7 @@ const UploadModal = ({
       try {
         console.log("Step 3.2: Running Fairness Audit...");
         const fairnessResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/audit/fairness?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`,
+          apiUrl(`ml/${p_id}/audit/fairness?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`),
           {
             method: "POST",
             headers: {
@@ -570,7 +578,7 @@ const UploadModal = ({
       try {
         console.log("Step 3.3: Running Explainability Audit...");
         const explainabilityResponse = await fetch(
-          `${baseUrl}/ml/${p_id}/audit/explainability?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`,
+          apiUrl(`ml/${p_id}/audit/explainability?model_id=${modelId}&dataset_id=${datasetData.id}&validation_dataset_id=${datasetData.dataset_metadata.validation_dataset_id}&testdataset=${datasetData.dataset_metadata.test_dataset_id}`),
           {
             method: "POST",
             headers: {
@@ -595,7 +603,7 @@ const UploadModal = ({
         try {
           console.log("Step 3.4: Running Drift Analysis with production data...");
           const driftResponse = await fetch(
-            `${baseUrl}/ml/${p_id}/audit/drift?model_id=${modelId}&dataset_id=${datasetData.id}`,
+            apiUrl(`ml/${p_id}/audit/drift?model_id=${modelId}&dataset_id=${datasetData.id}`),
             {
               method: "POST",
               headers: {
@@ -2225,7 +2233,7 @@ const UploadModal = ({
               </div>
             )}
 
-            {currentStep === 2 && (
+            {currentStep === 2 && formData.model_stage === "production" && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h5 className="text-2xl font-light text-gray-800 mb-2">
@@ -2513,7 +2521,7 @@ const UploadModal = ({
               </div>
             )}
 
-            {currentStep === 3 && (
+            {((currentStep === 3 && formData.model_stage === "production") || (currentStep === 2 && formData.model_stage !== "production")) && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h5 className="text-2xl font-light text-gray-800 mb-2">
@@ -2893,7 +2901,7 @@ const UploadModal = ({
                   Previous
                 </button>
               )}
-              {currentStep < 3 ? (
+              {(formData.model_stage === "production" ? currentStep < 3 : currentStep < 2) ? (
                 <button
                   onClick={handleNext}
                   className="px-8 py-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center shadow-lg disabled:bg-blue-300 disabled:cursor-not-allowed text-lg"

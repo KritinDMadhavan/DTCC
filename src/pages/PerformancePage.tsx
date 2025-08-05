@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FileUp as FileUpload2, Download } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Breadcrumb } from "../components/ui/breadcrumb";
+import { apiUrl } from "../lib/api-config";
 import {
   LineChart,
   Line,
@@ -1658,7 +1659,7 @@ const PerformancePage: React.FC = () => {
     setLoadingPerformance(true);
     console.log("Fetching performance data for:", { projectId: id, modelId, modelVersion });
     
-    const apiUrl = `http://localhost:8000/ml/performance/${id}/${modelId}/${modelVersion}`;
+    const performanceApiUrl = apiUrl(`ml/performance/${id}/${modelId}/${modelVersion}`);
     
     try {
       const accessToken = localStorage.getItem("access_token");
@@ -1678,10 +1679,10 @@ const PerformancePage: React.FC = () => {
         return;
       }
 
-      console.log("Making API request to:", apiUrl);
+      console.log("Making API request to:", performanceApiUrl);
 
       const response = await fetch(
-        apiUrl,
+        performanceApiUrl,
         {
           method: "GET",
           headers: {
@@ -1711,7 +1712,7 @@ const PerformancePage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching performance data:", error);
       console.error("Request details:", {
-        url: apiUrl,
+        url: performanceApiUrl,
         projectId: id,
         modelId,
         modelVersion,

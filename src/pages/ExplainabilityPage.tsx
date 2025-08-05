@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Breadcrumb } from "../components/ui/breadcrumb";
+import { apiUrl } from "../lib/api-config";
 import {
   BarChart,
   Bar,
@@ -431,10 +432,10 @@ const useExplainabilityData = (
         
         console.log("Model details found:", { modelId, model_version, projectId });
 
-        const apiUrl = `http://localhost:8000/ml/explainability/${projectId}/${modelId}/${model_version}`;
-        console.log("Making API call to:", apiUrl);
+        const explainabilityApiUrl = apiUrl(`ml/explainability/${projectId}/${modelId}/${model_version}`);
+        console.log("Making API call to:", explainabilityApiUrl);
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch(explainabilityApiUrl, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
@@ -1677,8 +1678,9 @@ const ExplainabilityPage: React.FC = () => {
       }
 
       console.log("🌐 Making API call to explainability endpoint");
+      const explainabilityUrl = apiUrl(`ml/explainability/${id}/${modelId}/${modelVersion}`);
       const response = await fetch(
-        `http://localhost:8000/ml/explainability/${id}/${modelId}/${modelVersion}`,
+        explainabilityUrl,
         {
           method: "GET",
           headers: {
@@ -1700,7 +1702,7 @@ const ExplainabilityPage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching explainability data:", error);
       console.error("Request details:", {
-        url: `http://localhost:8000/ml/explainability/${id}/${modelId}/${modelVersion}`,
+        url: apiUrl(`ml/explainability/${id}/${modelId}/${modelVersion}`),
         projectId: id,
         modelId,
         modelVersion,

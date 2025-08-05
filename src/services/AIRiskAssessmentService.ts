@@ -43,7 +43,7 @@ class AIRiskAssessmentService {
 
   constructor() {
     // Use local backend URL since running locally
-    this.baseUrl = "http://localhost:8000";
+    this.baseUrl = "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
   }
 
   private async makeRequest<T>(

@@ -8,7 +8,6 @@ import {
   CheckCircle,
   Database,
   Upload,
-  Wrench,
   Clock,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -33,44 +32,6 @@ import {
 import { useState, useEffect } from "react";
 import { InfoTooltip } from "../components/InfoTooltip";
 import { supabase } from "../lib/supabase";
-
-// Coming Soon Modal Component
-const ComingSoonModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-8 max-w-md mx-4 shadow-2xl">
-        <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-            <Wrench className="h-8 w-8 text-orange-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            Coming Soon - In Testing
-          </h2>
-          <p className="text-gray-600 mb-6">
-            The Drift Analysis feature is currently in testing phase. We're working hard to bring you comprehensive drift monitoring capabilities.
-          </p>
-          <div className="bg-orange-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-medium text-orange-800 mb-2">What's Being Tested:</h3>
-            <ul className="text-sm text-orange-700 space-y-1 text-left">
-              <li>• Feature drift detection algorithms</li>
-              <li>• Label distribution analysis</li>
-              <li>• Real-time monitoring systems</li>
-              <li>• Production data integration</li>
-            </ul>
-          </div>
-          <Button
-            onClick={onClose}
-            className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg"
-          >
-            Got It
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Define interfaces for the API response
 interface DriftApiResponse {
@@ -140,7 +101,7 @@ const useModelsExist = (projectId: string) => {
       try {
         const accessToken = localStorage.getItem("access_token");
         const baseUrl = import.meta.env?.VITE_API_BASE_URL || 
-          "http://localhost:8000";
+          "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
 
         const apiUrl = `${baseUrl}/ml/${id}/models/list`;
         console.log("Models API URL:", apiUrl);
@@ -234,7 +195,7 @@ const useDriftAnalysisData = (projectId: string) => {
         // Fetch drift analysis from API
         const accessToken = localStorage.getItem("access_token");
 
-        const apiUrl = `http://localhost:8000/ml/drift/${projectId}/${modelId}/${model_version}`;
+        const apiUrl = `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/drift/${projectId}/${modelId}/${model_version}`;
 
         const response = await fetch(apiUrl, {
           headers: {
@@ -442,13 +403,7 @@ const FeatureDriftChart = ({
 
 // Empty State Component for when there's no drift data
 const EmptyState = () => (
-  <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden p-8 relative">
-    {/* Testing Phase Banner */}
-    <div className="absolute top-4 right-4 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium flex items-center">
-      <Clock className="h-3 w-3 mr-1" />
-      Testing Phase
-    </div>
-
+  <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden p-8">
     <div className="max-w-3xl mx-auto text-center">
       <div className="mx-auto w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6">
         <ArrowUpDown className="h-10 w-10 text-emerald-600" />
@@ -457,18 +412,11 @@ const EmptyState = () => (
       <h2 className="text-2xl font-bold text-gray-900 mb-3">
         Drift Analysis Not Available
       </h2>
-      <p className="text-gray-600 max-w-2xl mx-auto mb-4">
+      <p className="text-gray-600 max-w-2xl mx-auto mb-8">
         No drift analysis data is available yet. Drift analysis helps you
         monitor changes in your model's input data and output predictions over
         time.
       </p>
-      
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-8">
-        <p className="text-orange-800 font-medium flex items-center justify-center">
-          <Wrench className="h-5 w-5 mr-2" />
-          This feature is currently in testing phase and will be available soon!
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-blue-50 p-6 rounded-lg text-left">
@@ -664,7 +612,7 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
   const [uploadProgress, setUploadProgress] = useState<string>('');
 
   const baseUrl = import.meta.env?.VITE_API_BASE_URL || 
-    "http://localhost:8000";
+    "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -675,19 +623,55 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
   };
 
   const handleDriftAnalysis = async () => {
-    // Show testing message instead of actual functionality
-    alert("This feature is currently in testing phase. Coming soon!");
-    return;
+    if (!selectedFile || !selectedModel) {
+      setErrorMessage('Please select both a model and upload a dataset');
+      return;
+    }
+
+    try {
+      setUploadState('uploading');
+      setUploadProgress('Uploading production dataset...');
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('model_id', selectedModel);
+      formData.append('project_id', projectId);
+
+      const accessToken = localStorage.getItem("access_token");
+      const response = await fetch(`${baseUrl}/ml/drift/analyze`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      setUploadState('analyzing');
+      setUploadProgress('Analyzing drift patterns...');
+
+      const result = await response.json();
+      
+      setUploadState('complete');
+      setUploadProgress('Drift analysis complete! Refreshing page...');
+      
+      // Refresh the page to show new drift data
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+    } catch (error) {
+      console.error('Drift analysis failed:', error);
+      setUploadState('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Analysis failed');
+    }
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-md p-8 relative">
-      {/* Testing Phase Banner */}
-      <div className="absolute top-4 right-4 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium flex items-center">
-        <Clock className="h-3 w-3 mr-1" />
-        Testing Phase
-      </div>
-
+    <div className="bg-white rounded-xl border border-gray-200 shadow-md p-8">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
@@ -699,15 +683,9 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
           <p className="text-gray-600">
             Models were found for this project, but no drift analysis data is available. Please upload your production dataset below to perform drift analysis.
           </p>
-          <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3">
-            <p className="text-orange-800 text-sm font-medium flex items-center justify-center">
-              <Wrench className="h-4 w-4 mr-2" />
-              This feature is currently in testing phase and will be available soon!
-            </p>
-          </div>
         </div>
 
-        <div className="space-y-6 opacity-50">
+        <div className="space-y-6">
           {/* Model Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -717,7 +695,7 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={true}
+              disabled={uploadState === 'uploading' || uploadState === 'analyzing'}
             >
               <option value="">Choose a model...</option>
               {models.map((model) => (
@@ -740,11 +718,11 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
                 accept=".csv,.json,.xlsx,.xls"
                 onChange={handleFileUpload}
                 className="hidden"
-                disabled={true}
+                disabled={uploadState === 'uploading' || uploadState === 'analyzing'}
               />
               <label
                 htmlFor="production-dataset"
-                className="cursor-not-allowed flex flex-col items-center"
+                className="cursor-pointer flex flex-col items-center"
               >
                 <Upload className="h-8 w-8 text-gray-400 mb-2" />
                 <span className="text-sm text-gray-600">
@@ -757,13 +735,43 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
             </div>
           </div>
 
+          {/* Progress Display */}
+          {uploadState !== 'idle' && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center">
+                {uploadState === 'error' ? (
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                ) : uploadState === 'complete' ? (
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                ) : (
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                )}
+                <span className={`text-sm font-medium ${
+                  uploadState === 'error' ? 'text-red-600' : 
+                  uploadState === 'complete' ? 'text-green-600' : 'text-blue-600'
+                }`}>
+                  {uploadProgress}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 text-sm">{errorMessage}</p>
+            </div>
+          )}
+
           {/* Submit Button */}
           <Button
             onClick={handleDriftAnalysis}
-            disabled={true}
-            className="w-full opacity-50 cursor-not-allowed"
+            disabled={!selectedFile || !selectedModel || uploadState === 'uploading' || uploadState === 'analyzing'}
+            className="w-full"
           >
-            Start Drift Analysis (Coming Soon)
+            {uploadState === 'uploading' ? 'Uploading...' : 
+             uploadState === 'analyzing' ? 'Analyzing...' : 
+             'Start Drift Analysis'}
           </Button>
         </div>
       </div>
@@ -774,7 +782,6 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
 const DriftAnalysisPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isDummyProject = id === "dummy-1" || id === "dummy-2";
-  const [showComingSoonModal, setShowComingSoonModal] = useState(true);
 
   // Use mock data for dummy projects
   const { data, loading, error, hasEmptyResponse } = isDummyProject
@@ -824,21 +831,12 @@ const DriftAnalysisPage: React.FC = () => {
   if (error && !hasEmptyResponse) {
     return (
       <div className="flex-1 p-8">
-        <ComingSoonModal 
-          isOpen={showComingSoonModal} 
-          onClose={() => setShowComingSoonModal(false)} 
-        />
-        
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <Breadcrumb segments={breadcrumbSegments} />
           </div>
 
-          <div className="mb-10 relative">
-            <div className="absolute top-0 right-0 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-              <Clock className="h-4 w-4 mr-1" />
-              Testing Phase
-            </div>
+          <div className="mb-10">
             <h1 className="text-3xl font-bold text-gray-900">Drift Analysis</h1>
             <p className="mt-2 text-gray-600">
               Monitor changes in your model's data and prediction patterns over
@@ -863,21 +861,12 @@ const DriftAnalysisPage: React.FC = () => {
     
     return (
       <div className="flex-1 p-8">
-        <ComingSoonModal 
-          isOpen={showComingSoonModal} 
-          onClose={() => setShowComingSoonModal(false)} 
-        />
-        
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <Breadcrumb segments={breadcrumbSegments} />
           </div>
 
-          <div className="mb-10 relative">
-            <div className="absolute top-0 right-0 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-              <Clock className="h-4 w-4 mr-1" />
-              Testing Phase
-            </div>
+          <div className="mb-10">
             <h1 className="text-3xl font-bold text-gray-900">Drift Analysis</h1>
             <p className="mt-2 text-gray-600">
               Monitor changes in your model's data and prediction patterns over
@@ -891,13 +880,7 @@ const DriftAnalysisPage: React.FC = () => {
           ) : (
             <div className="space-y-6">
               {/* Production data upload prompt */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-md p-8 relative">
-                {/* Testing Phase Banner */}
-                <div className="absolute top-4 right-4 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium flex items-center">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Testing Phase
-                </div>
-
+              <div className="bg-white rounded-xl border border-gray-200 shadow-md p-8">
                 <div className="text-center">
                   <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
                     <Upload className="h-8 w-8 text-blue-600" />
@@ -905,27 +888,19 @@ const DriftAnalysisPage: React.FC = () => {
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">
                     Production Data Required for Drift Analysis
                   </h3>
-                  <p className="text-gray-600 mb-4 max-w-2xl mx-auto">
+                  <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
                     Your models are ready, but no production data was provided during model upload. 
                     To perform drift analysis and monitor data changes over time, please upload your production dataset.
                   </p>
                   
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-                    <p className="text-orange-800 font-medium flex items-center justify-center">
-                      <Wrench className="h-5 w-5 mr-2" />
-                      This feature is currently in testing phase and will be available soon!
-                    </p>
-                  </div>
-                  
                   <Button
-                    onClick={() => alert("This feature is currently in testing phase. Coming soon!")}
-                    disabled={true}
-                    className="bg-gray-400 cursor-not-allowed text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 shadow-sm"
+                    onClick={() => window.location.href = `/projects/${id}/upload`}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 shadow-sm"
                   >
-                    Upload Production Data (Coming Soon)
+                    Upload Production Data
                   </Button>
                   
-                  <div className="mt-6 bg-blue-50 rounded-lg p-4 opacity-50">
+                  <div className="mt-6 bg-blue-50 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-blue-800 mb-2">What happens next?</h4>
                     <ul className="text-sm text-blue-700 space-y-1">
                       <li>• Upload your production dataset (CSV, JSON, or Excel)</li>
@@ -954,189 +929,176 @@ const DriftAnalysisPage: React.FC = () => {
     Object.values(data.metrics.feature_drift).some((f) => f.p_value < 0.05);
 
   return (
-    <>
-      <ComingSoonModal 
-        isOpen={showComingSoonModal} 
-        onClose={() => setShowComingSoonModal(false)} 
-      />
-      
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="p-8 space-y-8 bg-gray-50 min-h-screen relative"
-      >
-        {/* Testing Phase Banner */}
-        <div className="absolute top-4 right-4 bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-medium flex items-center z-10">
-          <Clock className="h-4 w-4 mr-1" />
-          Testing Phase - Coming Soon
-        </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="p-8 space-y-8 bg-gray-50 min-h-screen"
+    >
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Drift Analysis</h1>
+        <p className="text-gray-500 mt-1">
+          Model: {data.model_name} (v{data.model_version})
+        </p>
+      </div>
 
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Drift Analysis</h1>
-          <p className="text-gray-500 mt-1">
-            Model: {data.model_name} (v{data.model_version})
-          </p>
-        </div>
-
-        {/* Overall Drift Status */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 opacity-75">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Drift Status Summary
-          </h2>
-          <div className="flex flex-col space-y-3">
-            <DriftStatusIndicator
-              value={data.metrics.label_drift.p_value}
-              threshold={0.05}
-              label="Label Distribution"
-            />
-            <DriftStatusIndicator
-              value={Math.min(
-                ...Object.values(data.metrics.feature_drift).map((f) => f.p_value)
-              )}
-              threshold={0.05}
-              label="Feature Distributions"
-            />
-
-            <div className="mt-4 p-4 rounded-lg bg-emerald-50 border border-emerald-100">
-              <h3 className="font-medium text-emerald-800 mb-2">
-                Analysis Summary
-              </h3>
-              <p className="text-emerald-700 text-sm">
-                {hasDrift
-                  ? "Significant drift detected. Consider retraining your model with more recent data to maintain performance."
-                  : "No significant drift detected. Your model is performing consistently with its training data."}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-75">
-          <MetricCard
-            title="Data Size"
-            value={data.metrics.data_info.total_samples}
-            description="Number of samples in current dataset"
-            icon={<Database className="h-5 w-5 text-blue-500" />}
-            status="normal"
+      {/* Overall Drift Status */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          Drift Status Summary
+        </h2>
+        <div className="flex flex-col space-y-3">
+          <DriftStatusIndicator
+            value={data.metrics.label_drift.p_value}
+            threshold={0.05}
+            label="Label Distribution"
           />
-          <MetricCard
-            title="Feature Count"
-            value={data.metrics.data_info.feature_count}
-            description="Number of features analyzed for drift"
-            icon={<BarChart className="h-5 w-5 text-blue-500" />}
-            status="normal"
-          />
-          <MetricCard
-            title="Label Drift"
-            value={
-              data.metrics.label_drift.p_value < 0.05 ? "Detected" : "Stable"
-            }
-            description={`Chi-square test p-value: ${
-              data.metrics.label_drift.p_value !== undefined
-                ? data.metrics.label_drift.p_value.toFixed(4)
-                : "N/A"
-            }`}
-            icon={<AlertTriangle className="h-5 w-5 text-blue-500" />}
-            status={data.metrics.label_drift.p_value < 0.05 ? "alert" : "normal"}
-          />
-        </div>
-
-        {/* Feature Drift Chart */}
-        <motion.div
-          whileHover={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-          transition={{ duration: 0.3 }}
-          className="bg-white rounded-xl p-6 shadow-md border border-gray-100 opacity-75"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Feature Drift Analysis
-              </h2>
-            </div>
-            <InfoTooltip
-              title="Feature Drift Analysis"
-              entityType="chart"
-              entityName="Feature Drift Analysis"
-              data={{ chartData: featureDriftData }}
-            />
-          </div>
-          <FeatureDriftChart data={featureDriftData} />
-        </motion.div>
-
-        {/* Recommendations */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 opacity-75">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Recommendations
-          </h2>
-          <div className="space-y-4">
-            {hasDrift ? (
-              <>
-                <div className="flex items-start">
-                  <div className="mt-0.5 mr-3 text-red-500">
-                    <AlertCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Retrain Your Model
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      Consider retraining your model with more recent data that
-                      includes the shifted patterns.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <div className="mt-0.5 mr-3 text-yellow-500">
-                    <AlertTriangle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Investigate Drift Sources
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      Examine the features with highest drift to understand what's
-                      changing in your data.
-                    </p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-start">
-                  <div className="mt-0.5 mr-3 text-green-500">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Continue Monitoring
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      Your model is performing well, but continue regular drift
-                      monitoring to catch any future changes.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <div className="mt-0.5 mr-3 text-blue-500">
-                    <ArrowUpDown className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Set Up Alerts</h3>
-                    <p className="text-gray-600 text-sm">
-                      Consider setting up automated alerts for early detection of
-                      potential drift.
-                    </p>
-                  </div>
-                </div>
-              </>
+          <DriftStatusIndicator
+            value={Math.min(
+              ...Object.values(data.metrics.feature_drift).map((f) => f.p_value)
             )}
+            threshold={0.05}
+            label="Feature Distributions"
+          />
+
+          <div className="mt-4 p-4 rounded-lg bg-emerald-50 border border-emerald-100">
+            <h3 className="font-medium text-emerald-800 mb-2">
+              Analysis Summary
+            </h3>
+            <p className="text-emerald-700 text-sm">
+              {hasDrift
+                ? "Significant drift detected. Consider retraining your model with more recent data to maintain performance."
+                : "No significant drift detected. Your model is performing consistently with its training data."}
+            </p>
           </div>
         </div>
+      </div>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <MetricCard
+          title="Data Size"
+          value={data.metrics.data_info.total_samples}
+          description="Number of samples in current dataset"
+          icon={<Database className="h-5 w-5 text-blue-500" />}
+          status="normal"
+        />
+        <MetricCard
+          title="Feature Count"
+          value={data.metrics.data_info.feature_count}
+          description="Number of features analyzed for drift"
+          icon={<BarChart className="h-5 w-5 text-blue-500" />}
+          status="normal"
+        />
+        <MetricCard
+          title="Label Drift"
+          value={
+            data.metrics.label_drift.p_value < 0.05 ? "Detected" : "Stable"
+          }
+          description={`Chi-square test p-value: ${
+            data.metrics.label_drift.p_value !== undefined
+              ? data.metrics.label_drift.p_value.toFixed(4)
+              : "N/A"
+          }`}
+          icon={<AlertTriangle className="h-5 w-5 text-blue-500" />}
+          status={data.metrics.label_drift.p_value < 0.05 ? "alert" : "normal"}
+        />
+      </div>
+
+      {/* Feature Drift Chart */}
+      <motion.div
+        whileHover={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-xl p-6 shadow-md border border-gray-100"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Feature Drift Analysis
+            </h2>
+          </div>
+          <InfoTooltip
+            title="Feature Drift Analysis"
+            entityType="chart"
+            entityName="Feature Drift Analysis"
+            data={{ chartData: featureDriftData }}
+          />
+        </div>
+        <FeatureDriftChart data={featureDriftData} />
       </motion.div>
-    </>
+
+      {/* Recommendations */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          Recommendations
+        </h2>
+        <div className="space-y-4">
+          {hasDrift ? (
+            <>
+              <div className="flex items-start">
+                <div className="mt-0.5 mr-3 text-red-500">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    Retrain Your Model
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Consider retraining your model with more recent data that
+                    includes the shifted patterns.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start">
+                <div className="mt-0.5 mr-3 text-yellow-500">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    Investigate Drift Sources
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Examine the features with highest drift to understand what's
+                    changing in your data.
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-start">
+                <div className="mt-0.5 mr-3 text-green-500">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    Continue Monitoring
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Your model is performing well, but continue regular drift
+                    monitoring to catch any future changes.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start">
+                <div className="mt-0.5 mr-3 text-blue-500">
+                  <ArrowUpDown className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">Set Up Alerts</h3>
+                  <p className="text-gray-600 text-sm">
+                    Consider setting up automated alerts for early detection of
+                    potential drift.
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

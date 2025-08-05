@@ -178,7 +178,7 @@ const FairnessPage: React.FC = () => {
 
       console.log("🌐 Making API call to fairness endpoint");
       const response = await axios.get(
-        `http://localhost:8000/ml/fairness/${id}/${modelId}/${modelVersion}`,
+        `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/fairness/${id}/${modelId}/${modelVersion}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -193,7 +193,7 @@ const FairnessPage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching fairness data:", error);
       console.error("Request details:", {
-        url: `http://localhost:8000/ml/fairness/${id}/${modelId}/${modelVersion}`,
+        url: `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/fairness/${id}/${modelId}/${modelVersion}`,
         projectId: id,
         modelId,
         modelVersion,
