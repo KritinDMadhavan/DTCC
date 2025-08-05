@@ -485,14 +485,21 @@ const RiskAssessmentPage: React.FC = () => {
     }
   };
 
-  const checkAutoSectionsCompletion = async () => {
+  const evaluateAutomatedQuestion = async (
+    questionId: string,
+    endpoint: string,
+    question: string
+  ) => {
+    console.log(`🚀 Starting evaluation for ${questionId}`);
+    console.log(`📡 Endpoint: ${endpoint}`);
+    console.log(`❓ Question: ${question}`);
     try {
-      // Get token from localStorage (similar to ProjectOverviewPage)
       const token = localStorage.getItem("access_token");
       if (!token) {
-        console.log("No access token found");
-        return;
+        console.log("❌ No access token found");
+        return "na";
       }
+      console.log("✅ Access token found");
 
       const config = {
         headers: {
@@ -501,27 +508,154 @@ const RiskAssessmentPage: React.FC = () => {
         },
       };
 
-      // Check if models/data exist for this project
-      try {
-        const modelsResponse = await axios.get(
-          `http://localhost:8000/ml/${id}/models/list`,
-          config
+      console.log(`📡 Making API request to: ${endpoint}`);
+      // Fetch evaluation data
+      const response = await axios.get(endpoint, config);
+      console.log(`📊 API Response Status: ${response.status}`);
+
+      // Check if the response status is successful (2xx range)
+      if (response.status < 200 || response.status >= 300) {
+        console.error(
+          `❌ ${questionId} API Error: Status ${response.status}`,
+          response.data
+        );
+        console.log(`🔄 Returning N/A due to API error`);
+        return "na"; // Return N/A when evaluation data is not available
+      }
+
+      console.log(`✅ ${questionId} API Response:`, response.data);
+      console.log(`🤖 Sending data to Gemini for analysis...`);
+
+      // Send data to Gemini for analysis
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=AIzaSyCb8vE2NtQApNeMNsZ6ZfaG0Wtxyzl3pGE`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `You are an AI Risk Assessment expert. Analyze the following evaluation data and answer the question with ONLY "Yes", "No", or "N/A".
+
+EVALUATION DATA:
+${JSON.stringify(response.data, null, 2)}
+
+QUESTION: ${question}
+
+INSTRUCTIONS:
+- Analyze the evaluation data thoroughly
+- Answer with ONLY "Yes", "No", or "N/A"
+- "Yes" = The evaluation data shows mechanisms/measures are in place
+- "No" = The evaluation data shows mechanisms/measures are NOT in place
+- "N/A" = The evaluation data is insufficient or not applicable
+
+ANSWER:`,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      console.log(`📊 Gemini Response Status: ${geminiResponse.status}`);
+
+      // Check if Gemini response is successful
+      if (!geminiResponse.ok) {
+        const errorText = await geminiResponse.text();
+        console.error(
+          `❌ ${questionId} Gemini API Error: Status ${geminiResponse.status}`,
+          errorText
+        );
+        console.log(`🔄 Returning N/A due to Gemini API error`);
+        return "na"; // Return N/A when Gemini analysis fails
+      }
+
+      const geminiData = await geminiResponse.json();
+      const answer =
+        geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+      console.log(`✅ ${questionId} Gemini Analysis:`, answer);
+      console.log(
+        `🎯 Final Result: ${
+          answer === "Yes" ? "yes" : answer === "No" ? "no" : "na"
+        }`
+      );
+
+      return answer === "Yes" ? "yes" : answer === "No" ? "no" : "na";
+    } catch (error) {
+      console.error(`❌ Error evaluating ${questionId}:`, error);
+      console.log(`🔄 Returning N/A due to exception`);
+      return "na"; // Return N/A when any error occurs
+    }
+  };
+
+  const checkAutoSectionsCompletion = async () => {
+    console.log(
+      `🔍 Starting auto sections completion check for project: ${id}`
+    );
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.log("❌ No access token found");
+        return;
+      }
+      console.log("✅ Access token found for auto sections check");
+
+      // Get model data first
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      };
+
+      console.log(`📡 Fetching model data for project: ${id}`);
+      const modelsResponse = await axios.get(
+        `http://localhost:8000/ml/${id}/models/list`,
+        config
+      );
+      console.log(`📊 Models response:`, modelsResponse.data);
+
+      if (modelsResponse.data && modelsResponse.data.length > 0) {
+        const modelData = modelsResponse.data[0];
+        const modelId = modelData.id;
+        const modelVersion = modelData.version;
+        console.log(
+          `🔧 Model details - ID: ${modelId}, Version: ${modelVersion}`
         );
 
-        // If we get a successful response with data, mark auto sections as completed
-        if (modelsResponse.data && modelsResponse.data.length > 0) {
-          setAutoSectionsCompleted(new Set([3, 5, 6, 8, 9, 10]));
-        } else {
-          // No data, keep auto sections as not completed
-          setAutoSectionsCompleted(new Set());
-        }
-      } catch (apiError) {
-        console.log("Models API not available or no data:", apiError);
-        // API call failed or returned no data, keep auto sections as not completed
+        console.log(`🎯 Starting evaluation for Section 3, Question 1`);
+        // Evaluate Section 3, Question 1: Impact Assessment Mechanisms
+        const impactAssessmentResult = await evaluateAutomatedQuestion(
+          "Section3_Q1",
+          `http://localhost:8000/ml/fairness/${id}/${modelId}/${modelVersion}`,
+          "Are mechanisms in place to identify and assess the impacts of the AI system on individuals, the environment, communities, and society?"
+        );
+        console.log(`📋 Evaluation result: ${impactAssessmentResult}`);
+
+        // Update assessment data with the result (including N/A)
+        setAssessmentData((prev) => ({
+          ...prev,
+          impactAssessmentMechanisms: impactAssessmentResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with result: ${impactAssessmentResult}`
+        );
+
+        // Mark section as auto-completed (N/A is also a valid result)
+        setAutoSectionsCompleted(new Set([3]));
+        console.log(`✅ Marked Section 3 as auto-completed`);
+      } else {
+        console.log(`⚠️ No model data found for project: ${id}`);
         setAutoSectionsCompleted(new Set());
       }
     } catch (error) {
-      console.error("Error checking auto sections completion:", error);
+      console.error("❌ Error checking auto sections completion:", error);
       setAutoSectionsCompleted(new Set());
     }
   };
@@ -5484,13 +5618,42 @@ Add disclaimer if many responses are "no" or missing.`,
             3,
             "Valid and Reliable AI",
             <div className="space-y-6 pt-4">
-              {autoSectionsCompleted.has(3) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are mechanisms in place to identify and assess the impacts
-                    of the AI system on individuals, the environment,
-                    communities, and society?
-                  </label>
+              {/* Question 1: Impact Assessment Mechanisms */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are mechanisms in place to identify and assess the impacts of
+                  the AI system on individuals, the environment, communities,
+                  and society?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.impactAssessmentMechanisms === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.impactAssessmentMechanisms !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -5498,10 +5661,12 @@ Add disclaimer if many responses are "no" or missing.`,
                         name="impactAssessmentMechanisms"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={
+                          assessmentData.impactAssessmentMechanisms === "yes"
+                        }
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -5509,9 +5674,12 @@ Add disclaimer if many responses are "no" or missing.`,
                         name="impactAssessmentMechanisms"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.impactAssessmentMechanisms === "no"
+                        }
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -5519,59 +5687,19 @@ Add disclaimer if many responses are "no" or missing.`,
                         name="impactAssessmentMechanisms"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.impactAssessmentMechanisms === "na"
+                        }
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are mechanisms in place to identify and assess the impacts
-                    of the AI system on individuals, the environment,
-                    communities, and society?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="impactAssessmentMechanisms"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="impactAssessmentMechanisms"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="impactAssessmentMechanisms"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {renderRadioGroup(
                 "Are potential negative impacts re-assessed if there are significant changes to the AI system in all stages of the AI lifecycle?",
