@@ -73,7 +73,7 @@ const mockReports = [
     hash: "0x2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1",
     size: "1.8 MB",
     date: "about 1 year ago",
-   
+
     blockchainHash: "0x8b7c6d5e4f3a2b1c0d1e2f3a4b5c6d7e8f9a0b1c",
   },
 ];
@@ -109,7 +109,8 @@ const ReportPage: React.FC = () => {
   const [reportPreviewContent, setReportPreviewContent] = useState<string>("");
   const [assessmentData, setAssessmentData] = useState<any>(null);
   const [showConsolidatedPreview, setShowConsolidatedPreview] = useState(false);
-  const [showRiskAssessmentPreview, setShowRiskAssessmentPreview] = useState(false);
+  const [showRiskAssessmentPreview, setShowRiskAssessmentPreview] =
+    useState(false);
 
   // Check if this is a dummy project
   const isDummyProject = id === "dummy-1" || id === "dummy-2";
@@ -252,77 +253,243 @@ const ReportPage: React.FC = () => {
 
       const analysisData = JSON.parse(storedAnalysis);
       const assessmentData = analysisData.assessmentData || {};
-      
+
       // Fetch the template
-      const response = await fetch('/ai-risk-assessment-template.html');
+      const response = await fetch("/ai-risk-assessment-template.html");
       const template = await response.text();
-      
+
       // Replace placeholders with actual data
       let processedTemplate = template
-        .replace(/\{\{ project_name \}\}/g, analysisData.projectName || "AI System Assessment")
+        .replace(
+          /\{\{ project_name \}\}/g,
+          analysisData.projectName || "AI System Assessment"
+        )
         .replace(/\{\{ assessment_date \}\}/g, new Date().toLocaleDateString())
-        .replace(/\{\{ ai_system_description \}\}/g, assessmentData.aiSystemDescription || "Not provided")
-        .replace(/\{\{ ai_system_purpose \}\}/g, assessmentData.aiSystemPurpose || "Not provided")
-        .replace(/\{\{ deployment_method \}\}/g, assessmentData.deploymentMethod || "Not provided")
-        .replace(/\{\{ deployment_requirements \}\}/g, assessmentData.deploymentRequirements || "Not provided")
-        .replace(/\{\{ roles_documented \}\}/g, assessmentData.rolesDocumented || "Not provided")
-        .replace(/\{\{ personnel_trained \}\}/g, assessmentData.personnelTrained || "Not provided")
-        .replace(/\{\{ human_involvement \}\}/g, assessmentData.humanInvolvement || "Not provided")
-        .replace(/\{\{ bias_training \}\}/g, assessmentData.biasTraining || "Not provided")
-        .replace(/\{\{ human_intervention \}\}/g, assessmentData.humanIntervention || "Not provided")
-        .replace(/\{\{ human_override \}\}/g, assessmentData.humanOverride || "Not provided")
-        .replace(/\{\{ risk_levels \}\}/g, assessmentData.riskLevels || "Not provided")
-        .replace(/\{\{ threats_identified \}\}/g, assessmentData.threatsIdentified || "Not provided")
-        .replace(/\{\{ malicious_use_assessed \}\}/g, assessmentData.maliciousUseAssessed || "Not provided")
-        .replace(/\{\{ personal_info_used \}\}/g, assessmentData.personalInfoUsed || "Not provided")
-        .replace(/\{\{ personal_info_categories \}\}/g, assessmentData.personalInfoCategories || "Not provided")
-        .replace(/\{\{ privacy_regulations \}\}/g, assessmentData.privacyRegulations || "Not provided")
-        .replace(/\{\{ privacy_risk_assessment \}\}/g, assessmentData.privacyRiskAssessment || "Not provided")
-        .replace(/\{\{ privacy_by_design \}\}/g, assessmentData.privacyByDesign || "Not provided")
-        .replace(/\{\{ individuals_informed \}\}/g, assessmentData.individualsInformed || "Not provided")
-        .replace(/\{\{ privacy_rights \}\}/g, assessmentData.privacyRights || "Not provided")
-        .replace(/\{\{ data_quality \}\}/g, assessmentData.dataQuality || "Not provided")
-        .replace(/\{\{ third_party_risks \}\}/g, assessmentData.thirdPartyRisks || "Not provided")
-        .replace(/\{\{ ai_recommendations \}\}/g, analysisData.aiRecommendations || "No recommendations available")
+        .replace(
+          /\{\{ ai_system_description \}\}/g,
+          assessmentData.aiSystemDescription || "Not provided"
+        )
+        .replace(
+          /\{\{ ai_system_purpose \}\}/g,
+          assessmentData.aiSystemPurpose || "Not provided"
+        )
+        .replace(
+          /\{\{ deployment_method \}\}/g,
+          assessmentData.deploymentMethod || "Not provided"
+        )
+        .replace(
+          /\{\{ deployment_requirements \}\}/g,
+          assessmentData.deploymentRequirements || "Not provided"
+        )
+        .replace(
+          /\{\{ roles_documented \}\}/g,
+          assessmentData.rolesDocumented || "Not provided"
+        )
+        .replace(
+          /\{\{ personnel_trained \}\}/g,
+          assessmentData.personnelTrained || "Not provided"
+        )
+        .replace(
+          /\{\{ human_involvement \}\}/g,
+          assessmentData.humanInvolvement || "Not provided"
+        )
+        .replace(
+          /\{\{ bias_training \}\}/g,
+          assessmentData.biasTraining || "Not provided"
+        )
+        .replace(
+          /\{\{ human_intervention \}\}/g,
+          assessmentData.humanIntervention || "Not provided"
+        )
+        .replace(
+          /\{\{ human_override \}\}/g,
+          assessmentData.humanOverride || "Not provided"
+        )
+        .replace(
+          /\{\{ risk_levels \}\}/g,
+          assessmentData.riskLevels || "Not provided"
+        )
+        .replace(
+          /\{\{ threats_identified \}\}/g,
+          assessmentData.threatsIdentified || "Not provided"
+        )
+        .replace(
+          /\{\{ malicious_use_assessed \}\}/g,
+          assessmentData.maliciousUseAssessed || "Not provided"
+        )
+        .replace(
+          /\{\{ personal_info_used \}\}/g,
+          assessmentData.personalInfoUsed || "Not provided"
+        )
+        .replace(
+          /\{\{ personal_info_categories \}\}/g,
+          assessmentData.personalInfoCategories || "Not provided"
+        )
+        .replace(
+          /\{\{ privacy_regulations \}\}/g,
+          assessmentData.privacyRegulations || "Not provided"
+        )
+        .replace(
+          /\{\{ privacy_risk_assessment \}\}/g,
+          assessmentData.privacyRiskAssessment || "Not provided"
+        )
+        .replace(
+          /\{\{ privacy_by_design \}\}/g,
+          assessmentData.privacyByDesign || "Not provided"
+        )
+        .replace(
+          /\{\{ individuals_informed \}\}/g,
+          assessmentData.individualsInformed || "Not provided"
+        )
+        .replace(
+          /\{\{ privacy_rights \}\}/g,
+          assessmentData.privacyRights || "Not provided"
+        )
+        .replace(
+          /\{\{ data_quality \}\}/g,
+          assessmentData.dataQuality || "Not provided"
+        )
+        .replace(
+          /\{\{ third_party_risks \}\}/g,
+          assessmentData.thirdPartyRisks || "Not provided"
+        )
+        .replace(
+          /\{\{ ai_recommendations \}\}/g,
+          analysisData.aiRecommendations || "No recommendations available"
+        )
         .replace(/\{\{ overall_risk_level \}\}/g, "Medium")
         .replace(/\{\{ completion_percentage \}\}/g, "85")
         .replace(/\{\{ completed_sections \}\}/g, "8")
         .replace(/\{\{ total_sections \}\}/g, "10")
-        .replace(/\{\{ governance_strengths \}\}/g, "Documented roles and responsibilities")
-        .replace(/\{\{ security_strengths \}\}/g, "Standard security controls implemented")
-        .replace(/\{\{ privacy_strengths \}\}/g, assessmentData.privacyByDesign === "yes" ? "Privacy-by-design principles implemented" : "Basic privacy controls in place")
-        .replace(/\{\{ explainability_strengths \}\}/g, "Model interpretability framework established")
-        .replace(/\{\{ compliance_readiness \}\}/g, "Good - Most controls implemented")
-        .replace(/\{\{ privacy_compliance_status \}\}/g, assessmentData.personalInfoUsed === "yes" ? "Requires attention" : "Compliant")
+        .replace(
+          /\{\{ governance_strengths \}\}/g,
+          "Documented roles and responsibilities"
+        )
+        .replace(
+          /\{\{ security_strengths \}\}/g,
+          "Standard security controls implemented"
+        )
+        .replace(
+          /\{\{ privacy_strengths \}\}/g,
+          assessmentData.privacyByDesign === "yes"
+            ? "Privacy-by-design principles implemented"
+            : "Basic privacy controls in place"
+        )
+        .replace(
+          /\{\{ explainability_strengths \}\}/g,
+          "Model interpretability framework established"
+        )
+        .replace(
+          /\{\{ compliance_readiness \}\}/g,
+          "Good - Most controls implemented"
+        )
+        .replace(
+          /\{\{ privacy_compliance_status \}\}/g,
+          assessmentData.personalInfoUsed === "yes"
+            ? "Requires attention"
+            : "Compliant"
+        )
         .replace(/\{\{ nist_compliance_status \}\}/g, "Aligned")
         .replace(/\{\{ iso_compliance_status \}\}/g, "Partially aligned")
-        .replace(/\{\{ assessment_disclaimer \}\}/g, assessmentData.personalInfoUsed === "no" ? "" : '<div class="disclaimer">Note: This assessment indicates areas requiring additional attention for full compliance.</div>')
+        .replace(
+          /\{\{ assessment_disclaimer \}\}/g,
+          assessmentData.personalInfoUsed === "no"
+            ? ""
+            : '<div class="disclaimer">Note: This assessment indicates areas requiring additional attention for full compliance.</div>'
+        )
         // Risk matrix placeholders
-        .replace(/\{\{ privacy_score \}\}/g, assessmentData.personalInfoUsed === "yes" ? (assessmentData.privacyByDesign === "yes" ? "3" : "6") : "3")
-        .replace(/\{\{ privacy_likelihood \}\}/g, assessmentData.personalInfoUsed === "yes" ? (assessmentData.privacyByDesign === "yes" ? "Low" : "Medium") : "Low")
-        .replace(/\{\{ privacy_impact \}\}/g, assessmentData.personalInfoUsed === "yes" ? "High" : "Medium")
-        .replace(/\{\{ privacy_risk_level \}\}/g, assessmentData.personalInfoUsed === "yes" ? (assessmentData.privacyByDesign === "yes" ? "LOW" : "MEDIUM") : "LOW")
-        .replace(/\{\{ privacy_priority \}\}/g, assessmentData.personalInfoUsed === "yes" ? (assessmentData.privacyByDesign === "yes" ? "Monitor" : "Address") : "Monitor")
-        .replace(/\{\{ bias_score \}\}/g, assessmentData.biasTraining === "yes" ? "3" : "6")
-        .replace(/\{\{ bias_likelihood \}\}/g, assessmentData.biasTraining === "yes" ? "Low" : "Medium")
+        .replace(
+          /\{\{ privacy_score \}\}/g,
+          assessmentData.personalInfoUsed === "yes"
+            ? assessmentData.privacyByDesign === "yes"
+              ? "3"
+              : "6"
+            : "3"
+        )
+        .replace(
+          /\{\{ privacy_likelihood \}\}/g,
+          assessmentData.personalInfoUsed === "yes"
+            ? assessmentData.privacyByDesign === "yes"
+              ? "Low"
+              : "Medium"
+            : "Low"
+        )
+        .replace(
+          /\{\{ privacy_impact \}\}/g,
+          assessmentData.personalInfoUsed === "yes" ? "High" : "Medium"
+        )
+        .replace(
+          /\{\{ privacy_risk_level \}\}/g,
+          assessmentData.personalInfoUsed === "yes"
+            ? assessmentData.privacyByDesign === "yes"
+              ? "LOW"
+              : "MEDIUM"
+            : "LOW"
+        )
+        .replace(
+          /\{\{ privacy_priority \}\}/g,
+          assessmentData.personalInfoUsed === "yes"
+            ? assessmentData.privacyByDesign === "yes"
+              ? "Monitor"
+              : "Address"
+            : "Monitor"
+        )
+        .replace(
+          /\{\{ bias_score \}\}/g,
+          assessmentData.biasTraining === "yes" ? "3" : "6"
+        )
+        .replace(
+          /\{\{ bias_likelihood \}\}/g,
+          assessmentData.biasTraining === "yes" ? "Low" : "Medium"
+        )
         .replace(/\{\{ bias_impact \}\}/g, "High")
-        .replace(/\{\{ bias_risk_level \}\}/g, assessmentData.biasTraining === "yes" ? "LOW" : "MEDIUM")
-        .replace(/\{\{ bias_priority \}\}/g, assessmentData.biasTraining === "yes" ? "Monitor" : "Address")
+        .replace(
+          /\{\{ bias_risk_level \}\}/g,
+          assessmentData.biasTraining === "yes" ? "LOW" : "MEDIUM"
+        )
+        .replace(
+          /\{\{ bias_priority \}\}/g,
+          assessmentData.biasTraining === "yes" ? "Monitor" : "Address"
+        )
         .replace(/\{\{ explainability_score \}\}/g, "3")
         .replace(/\{\{ explainability_likelihood \}\}/g, "Low")
         .replace(/\{\{ explainability_impact \}\}/g, "Medium")
         .replace(/\{\{ explainability_risk_level \}\}/g, "LOW")
         .replace(/\{\{ explainability_priority \}\}/g, "Monitor")
-        .replace(/\{\{ robustness_score \}\}/g, assessmentData.threatsIdentified === "yes" ? "4" : "6")
-        .replace(/\{\{ robustness_likelihood \}\}/g, assessmentData.threatsIdentified === "yes" ? "Low" : "Medium")
+        .replace(
+          /\{\{ robustness_score \}\}/g,
+          assessmentData.threatsIdentified === "yes" ? "4" : "6"
+        )
+        .replace(
+          /\{\{ robustness_likelihood \}\}/g,
+          assessmentData.threatsIdentified === "yes" ? "Low" : "Medium"
+        )
         .replace(/\{\{ robustness_impact \}\}/g, "High")
-        .replace(/\{\{ robustness_risk_level \}\}/g, assessmentData.threatsIdentified === "yes" ? "LOW" : "MEDIUM")
-        .replace(/\{\{ robustness_priority \}\}/g, assessmentData.threatsIdentified === "yes" ? "Monitor" : "Address")
-        .replace(/\{\{ governance_score \}\}/g, assessmentData.rolesDocumented === "yes" ? "3" : "5")
-        .replace(/\{\{ governance_likelihood \}\}/g, assessmentData.rolesDocumented === "yes" ? "Low" : "Medium")
+        .replace(
+          /\{\{ robustness_risk_level \}\}/g,
+          assessmentData.threatsIdentified === "yes" ? "LOW" : "MEDIUM"
+        )
+        .replace(
+          /\{\{ robustness_priority \}\}/g,
+          assessmentData.threatsIdentified === "yes" ? "Monitor" : "Address"
+        )
+        .replace(
+          /\{\{ governance_score \}\}/g,
+          assessmentData.rolesDocumented === "yes" ? "3" : "5"
+        )
+        .replace(
+          /\{\{ governance_likelihood \}\}/g,
+          assessmentData.rolesDocumented === "yes" ? "Low" : "Medium"
+        )
         .replace(/\{\{ governance_impact \}\}/g, "Medium")
-        .replace(/\{\{ governance_risk_level \}\}/g, assessmentData.rolesDocumented === "yes" ? "LOW" : "MEDIUM")
-        .replace(/\{\{ governance_priority \}\}/g, assessmentData.rolesDocumented === "yes" ? "Monitor" : "Address")
+        .replace(
+          /\{\{ governance_risk_level \}\}/g,
+          assessmentData.rolesDocumented === "yes" ? "LOW" : "MEDIUM"
+        )
+        .replace(
+          /\{\{ governance_priority \}\}/g,
+          assessmentData.rolesDocumented === "yes" ? "Monitor" : "Address"
+        )
         .replace(/\{\{ security_score \}\}/g, "4")
         .replace(/\{\{ security_likelihood \}\}/g, "Low")
         .replace(/\{\{ security_impact \}\}/g, "High")
@@ -332,7 +499,7 @@ const ReportPage: React.FC = () => {
       // Extract just the body content for preview
       const bodyMatch = processedTemplate.match(/<body>([\s\S]*?)<\/body>/);
       const bodyContent = bodyMatch ? bodyMatch[1] : processedTemplate;
-      
+
       // Add inline styles for proper preview display
       const styledContent = `
         <div style="
@@ -400,7 +567,7 @@ const ReportPage: React.FC = () => {
 
     // Generate report preview if risk assessment exists
     if (wasGenerated === "true" && hasPdfData) {
-      generateReportPreview().then(content => {
+      generateReportPreview().then((content) => {
         setReportPreviewContent(content);
       });
     }
@@ -562,7 +729,7 @@ const ReportPage: React.FC = () => {
 
       // First API call to generate the report
       const generateResponse = await fetch(
-        `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/${modelData.project_id}/reports/generate?model_id=${modelData.model_id}&dataset_id=${modelData.dataset_id}`,
+        `http://localhost:8000/ml/${modelData.project_id}/reports/generate?model_id=${modelData.model_id}&dataset_id=${modelData.dataset_id}`,
         {
           method: "POST",
           headers: {
@@ -589,7 +756,7 @@ const ReportPage: React.FC = () => {
 
       // Second API call to download the report file after successful generation
       const downloadResponse = await fetch(
-        `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/download/${modelData.project_id}/${modelData.model_id}/${modelData.model_version}`,
+        `http://localhost:8000/ml/download/${modelData.project_id}/${modelData.model_id}/${modelData.model_version}`,
         {
           method: "GET",
           headers: {
@@ -698,27 +865,32 @@ const ReportPage: React.FC = () => {
       }, 3000);
     } catch (error) {
       console.error("Error downloading report:", error);
-      console.log("API failed, falling back to consolidated analysis report...");
-      
+      console.log(
+        "API failed, falling back to consolidated analysis report..."
+      );
+
       // Fallback to consolidated analysis report
       try {
         setReportGeneration({
           status: ReportGenerationStatus.DOWNLOADING,
-          message: "API unavailable. Downloading consolidated analysis report...",
+          message:
+            "API unavailable. Downloading consolidated analysis report...",
         });
 
         // Fetch the consolidated analysis report PDF from the public folder
-        const response = await fetch('/Consolidated_analysis_report.pdf');
-        
+        const response = await fetch("/Consolidated_analysis_report.pdf");
+
         if (!response.ok) {
-          throw new Error('Consolidated report not found');
+          throw new Error("Consolidated report not found");
         }
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `Consolidated_Analysis_Report_${projectDetails?.project_name?.replace(/\s+/g, "_") || `Project_${id}`}.pdf`;
+        a.download = `Consolidated_Analysis_Report_${
+          projectDetails?.project_name?.replace(/\s+/g, "_") || `Project_${id}`
+        }.pdf`;
         document.body.appendChild(a);
         a.click();
 
@@ -739,7 +911,6 @@ const ReportPage: React.FC = () => {
             message: null,
           });
         }, 3000);
-
       } catch (fallbackError) {
         console.error("Error downloading fallback report:", fallbackError);
         setReportGeneration({
@@ -914,7 +1085,9 @@ const ReportPage: React.FC = () => {
                         </p>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm text-gray-500 mb-1">Model Version</p>
+                        <p className="text-sm text-gray-500 mb-1">
+                          Model Version
+                        </p>
                         <p className="font-mono text-sm font-medium text-gray-900">
                           {modelData.model_version}
                         </p>
@@ -1008,12 +1181,14 @@ const ReportPage: React.FC = () => {
         {/* Analysis Reports Section - Redesigned to match dummy project cards */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-lg mb-8 overflow-hidden">
           <div className="bg-gradient-to-r from-teal-50 to-blue-50 border-b border-gray-200 px-8 py-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Analysis Reports</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Analysis Reports
+            </h2>
             <p className="text-gray-600 text-sm">
               Download comprehensive analysis reports for your AI model
             </p>
           </div>
-          
+
           <div className="p-8">
             <div className="space-y-6">
               {/* Performance Analysis Report Card */}
@@ -1047,13 +1222,16 @@ const ReportPage: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-sm text-gray-500 mt-1">
-                        0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b • 2.4 MB • about 1 year ago
+                        0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b • 2.4 MB •
+                        about 1 year ago
                       </p>
                     </div>
                   </div>
                   <div className="flex gap-2 ml-auto">
                     <button
-                      onClick={() => setShowConsolidatedPreview(!showConsolidatedPreview)}
+                      onClick={() =>
+                        setShowConsolidatedPreview(!showConsolidatedPreview)
+                      }
                       className="inline-flex items-center p-2 border border-transparent rounded-lg text-gray-500 hover:text-teal-600 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-300"
                       title="Toggle Preview"
                     >
@@ -1106,7 +1284,8 @@ const ReportPage: React.FC = () => {
                       className="inline-flex items-center p-2 border border-transparent rounded-lg text-gray-500 hover:text-teal-600 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Download"
                     >
-                      {reportGeneration.status !== ReportGenerationStatus.IDLE ? (
+                      {reportGeneration.status !==
+                      ReportGenerationStatus.IDLE ? (
                         <svg
                           className="h-5 w-5 animate-spin"
                           xmlns="http://www.w3.org/2000/svg"
@@ -1167,12 +1346,13 @@ const ReportPage: React.FC = () => {
                 </div>
 
                 {/* Report Metrics */}
-                
 
                 {/* Blockchain Hash */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 border-t border-gray-200 gap-4">
                   <div className="flex flex-col md:flex-row md:items-center gap-2">
-                    <span className="text-sm text-gray-500">Blockchain Hash:</span>
+                    <span className="text-sm text-gray-500">
+                      Blockchain Hash:
+                    </span>
                     <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded">
                       0x9a8b7c6d5e4f3a2b1c0d1e2f3a4b5c6d7e8f9a0b
                     </code>
@@ -1200,13 +1380,25 @@ const ReportPage: React.FC = () => {
                 {showConsolidatedPreview && (
                   <div className="mt-6 bg-gray-50 rounded-lg p-6 border border-gray-200">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-semibold text-gray-900">Report Preview</h4>
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        Report Preview
+                      </h4>
                       <button
                         onClick={() => setShowConsolidatedPreview(false)}
                         className="text-gray-500 hover:text-gray-700"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -1225,8 +1417,13 @@ const ReportPage: React.FC = () => {
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                           />
                         </svg>
-                        <p className="text-lg font-medium">Consolidated Report Preview</p>
-                        <p className="text-sm mt-2">Performance metrics, fairness analysis, and compliance overview</p>
+                        <p className="text-lg font-medium">
+                          Consolidated Report Preview
+                        </p>
+                        <p className="text-sm mt-2">
+                          Performance metrics, fairness analysis, and compliance
+                          overview
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1260,21 +1457,30 @@ const ReportPage: React.FC = () => {
                           <h2 className="text-lg font-medium text-gray-900">
                             AI Risk Assessment Report
                           </h2>
-                                                                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              Risk Assessment
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            0x2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1 • 1.8 MB • {riskAssessmentTimestamp ? new Date(riskAssessmentTimestamp).toLocaleDateString() : 'about 1 year ago'}
-                          </p>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Risk Assessment
+                          </span>
                         </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          0x2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1 • 1.8 MB •{" "}
+                          {riskAssessmentTimestamp
+                            ? new Date(
+                                riskAssessmentTimestamp
+                              ).toLocaleDateString()
+                            : "about 1 year ago"}
+                        </p>
                       </div>
-                      <div className="flex gap-2 ml-auto">
-                        <button
-                          onClick={() => setShowRiskAssessmentPreview(!showRiskAssessmentPreview)}
-                          className="inline-flex items-center p-2 border border-transparent rounded-lg text-gray-500 hover:text-teal-600 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-300"
-                          title="Toggle Preview"
-                        >
+                    </div>
+                    <div className="flex gap-2 ml-auto">
+                      <button
+                        onClick={() =>
+                          setShowRiskAssessmentPreview(
+                            !showRiskAssessmentPreview
+                          )
+                        }
+                        className="inline-flex items-center p-2 border border-transparent rounded-lg text-gray-500 hover:text-teal-600 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-300"
+                        title="Toggle Preview"
+                      >
                         <svg
                           className="h-5 w-5"
                           xmlns="http://www.w3.org/2000/svg"
@@ -1299,12 +1505,14 @@ const ReportPage: React.FC = () => {
                       <button
                         onClick={handleDownloadRiskAssessment}
                         disabled={
-                          reportGeneration.status !== ReportGenerationStatus.IDLE
+                          reportGeneration.status !==
+                          ReportGenerationStatus.IDLE
                         }
                         className="inline-flex items-center p-2 border border-transparent rounded-lg text-gray-500 hover:text-teal-600 hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Download"
                       >
-                        {reportGeneration.status !== ReportGenerationStatus.IDLE ? (
+                        {reportGeneration.status !==
+                        ReportGenerationStatus.IDLE ? (
                           <svg
                             className="h-5 w-5 animate-spin"
                             xmlns="http://www.w3.org/2000/svg"
@@ -1365,12 +1573,13 @@ const ReportPage: React.FC = () => {
                   </div>
 
                   {/* Report Metrics */}
-                  
 
                   {/* Blockchain Hash */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 border-t border-gray-200 gap-4">
                     <div className="flex flex-col md:flex-row md:items-center gap-2">
-                      <span className="text-sm text-gray-500">Blockchain Hash:</span>
+                      <span className="text-sm text-gray-500">
+                        Blockchain Hash:
+                      </span>
                       <code className="text-sm font-mono bg-gray-50 px-2 py-1 rounded">
                         0x8b7c6d5e4f3a2b1c0d1e2f3a4b5c6d7e8f9a0b1c
                       </code>
@@ -1398,32 +1607,50 @@ const ReportPage: React.FC = () => {
                   {showRiskAssessmentPreview && (
                     <div className="mt-6 bg-gray-50 rounded-lg p-6 border border-gray-200">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-lg font-semibold text-gray-900">AI Risk Assessment Preview</h4>
+                        <h4 className="text-lg font-semibold text-gray-900">
+                          AI Risk Assessment Preview
+                        </h4>
                         <button
                           onClick={() => setShowRiskAssessmentPreview(false)}
                           className="text-gray-500 hover:text-gray-700"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       </div>
                       {(() => {
                         try {
-                          const storedAnalysis = localStorage.getItem(`riskAssessment_${id}`);
+                          const storedAnalysis = localStorage.getItem(
+                            `riskAssessment_${id}`
+                          );
                           if (storedAnalysis) {
                             const analysisData = JSON.parse(storedAnalysis);
                             if (analysisData.pdfData) {
                               // Convert base64 to blob URL
                               const byteCharacters = atob(analysisData.pdfData);
-                              const byteNumbers = new Array(byteCharacters.length);
+                              const byteNumbers = new Array(
+                                byteCharacters.length
+                              );
                               for (let i = 0; i < byteCharacters.length; i++) {
                                 byteNumbers[i] = byteCharacters.charCodeAt(i);
                               }
                               const byteArray = new Uint8Array(byteNumbers);
-                              const blob = new Blob([byteArray], { type: "application/pdf" });
+                              const blob = new Blob([byteArray], {
+                                type: "application/pdf",
+                              });
                               const pdfUrl = URL.createObjectURL(blob);
-                              
+
                               return (
                                 <iframe
                                   src={pdfUrl}
@@ -1433,7 +1660,8 @@ const ReportPage: React.FC = () => {
                                     border: "none",
                                     borderRadius: "8px",
                                     backgroundColor: "white",
-                                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                                    boxShadow:
+                                      "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                                   }}
                                   title="AI Risk Assessment Report PDF Preview"
                                 />
@@ -1443,7 +1671,7 @@ const ReportPage: React.FC = () => {
                         } catch (error) {
                           console.error("Error loading PDF:", error);
                         }
-                        
+
                         return (
                           <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 h-96 flex items-center justify-center">
                             <div className="text-center text-gray-500">
@@ -1460,8 +1688,13 @@ const ReportPage: React.FC = () => {
                                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                 />
                               </svg>
-                              <p className="text-lg font-medium">AI Risk Assessment Preview</p>
-                              <p className="text-sm mt-2">Generate the risk assessment report to see preview</p>
+                              <p className="text-lg font-medium">
+                                AI Risk Assessment Preview
+                              </p>
+                              <p className="text-sm mt-2">
+                                Generate the risk assessment report to see
+                                preview
+                              </p>
                             </div>
                           </div>
                         );
@@ -1941,7 +2174,7 @@ const ReportPage: React.FC = () => {
         </div>
       </div>
     </div>
-     );
- };
- 
- export default ReportPage;
+  );
+};
+
+export default ReportPage;

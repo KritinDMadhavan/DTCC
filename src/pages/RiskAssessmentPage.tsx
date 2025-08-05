@@ -498,7 +498,7 @@ const RiskAssessmentPage: React.FC = () => {
       // Check if models/data exist for this project
       try {
         const modelsResponse = await axios.get(
-          `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/${id}/models/list`,
+          `http://localhost:8000/ml/${id}/models/list`,
           config
         );
 
@@ -5457,7 +5457,7 @@ Add disclaimer if many responses are "no" or missing.`,
               )}
 
               {renderRadioGroup(
-                "Are identified potential negative impacts used to inform and implement mitigating measures throughout the AI lifecycle?",
+                "Are identified potential negative impacts of the AI system mitigated throughout the AI lifecycle?",
                 "mitigatingMeasuresImplemented",
                 [
                   { value: "yes", label: "Yes" },
@@ -5579,7 +5579,8 @@ Add disclaimer if many responses are "no" or missing.`,
                 <div className="space-y-3">
                   <label className="block text-sm font-medium text-gray-700">
                     Are procedures and relevant performance metrics in place to
-                    monitor AI system's accuracy?
+                    monitor and document the AI system's accuracy, performance,
+                    and reliability?
                   </label>
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
@@ -5622,7 +5623,8 @@ Add disclaimer if many responses are "no" or missing.`,
                 <div className="space-y-3">
                   <label className="block text-sm font-medium text-gray-700">
                     Are procedures and relevant performance metrics in place to
-                    monitor AI system's accuracy?
+                    monitor and document the AI system's accuracy, performance,
+                    and reliability?
                   </label>
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">

@@ -54,7 +54,7 @@ export default function NewProjectPage() {
         projectType === "generic" ? "ML" : projectType.toUpperCase();
       console.log(localStorage.getItem("access_token"));
       // API call to localhost
-      const response = await fetch("https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/projects/create", {
+      const response = await fetch("http://localhost:8000/projects/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

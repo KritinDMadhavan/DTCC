@@ -138,7 +138,7 @@ const HomePage: React.FC = () => {
     // If connected, fetch GitHub user data
     const accessToken = localStorage.getItem("accessToken");
     if (accessToken) {
-      fetch("https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getUserData", {
+      fetch("http://localhost:8000/getUserData", {
         method: "GET",
         headers: {
           Authorization: "Bearer " + accessToken,
@@ -153,7 +153,7 @@ const HomePage: React.FC = () => {
         });
 
       // Fetch GitHub user repos
-      fetch("https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getUserRepos", {
+      fetch("http://localhost:8000/getUserRepos", {
         method: "GET",
         headers: {
           Authorization: "Bearer " + accessToken,
@@ -183,7 +183,7 @@ const HomePage: React.FC = () => {
         storedAuthCode
       );
       // Exchange the code for an access token
-      fetch("https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/getAccessToken?code=" + storedAuthCode, {
+      fetch("http://localhost:8000/getAccessToken?code=" + storedAuthCode, {
         method: "GET",
       })
         .then((response) => response.json())

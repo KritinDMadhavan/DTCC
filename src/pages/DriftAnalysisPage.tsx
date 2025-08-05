@@ -100,8 +100,8 @@ const useModelsExist = (projectId: string) => {
       setModelsLoading(true);
       try {
         const accessToken = localStorage.getItem("access_token");
-        const baseUrl = import.meta.env?.VITE_API_BASE_URL || 
-          "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
+        const baseUrl =
+          import.meta.env?.VITE_API_BASE_URL || "http://localhost:8000";
 
         const apiUrl = `${baseUrl}/ml/${id}/models/list`;
         console.log("Models API URL:", apiUrl);
@@ -114,37 +114,44 @@ const useModelsExist = (projectId: string) => {
           },
         });
 
-        console.log("Models API response:",response);
+        console.log("Models API response:", response);
         if (response.status === 200) {
           const data = response.data;
-          console.log("Models data:",data);
+          console.log("Models data:", data);
           const modelsList = data.models || [];
           setModels(modelsList);
           setModelsExist(modelsList.length > 0);
-          console.log("Models exist:", modelsList.length > 0, "Count:", modelsList.length);
+          console.log(
+            "Models exist:",
+            modelsList.length > 0,
+            "Count:",
+            modelsList.length
+          );
         } else {
           setModelsExist(false);
           setModels([]);
         }
       } catch (error) {
         console.error("Error checking models:", error);
-        
+
         if (axios.isAxiosError(error)) {
           console.log("Axios error details:", {
             status: error.response?.status,
             statusText: error.response?.statusText,
             data: error.response?.data,
-            message: error.message
+            message: error.message,
           });
-          
+
           // If it's a 404 or similar, it might mean no models exist rather than an error
           if (error.response?.status === 404) {
-            console.log("No models found (404) - this is normal for projects without models");
+            console.log(
+              "No models found (404) - this is normal for projects without models"
+            );
           }
         } else {
           console.error("Non-axios error:", error);
         }
-        
+
         setModelsExist(false);
         setModels([]);
       } finally {
@@ -195,7 +202,7 @@ const useDriftAnalysisData = (projectId: string) => {
         // Fetch drift analysis from API
         const accessToken = localStorage.getItem("access_token");
 
-        const apiUrl = `https://prism-backend-dot-block-convey-p1.uc.r.appspot.com/ml/drift/${projectId}/${modelId}/${model_version}`;
+        const apiUrl = `http://localhost:8000/ml/drift/${projectId}/${modelId}/${model_version}`;
 
         const response = await fetch(apiUrl, {
           headers: {
@@ -207,8 +214,15 @@ const useDriftAnalysisData = (projectId: string) => {
         if (!response.ok) {
           console.log("API response not ok, status:", response.status);
           // Check if it's a 404, 400, or other "no data" response codes
-          if (response.status === 404 || response.status === 400 || response.status === 204) {
-            console.log("Setting hasEmptyResponse to true due to status:", response.status);
+          if (
+            response.status === 404 ||
+            response.status === 400 ||
+            response.status === 204
+          ) {
+            console.log(
+              "Setting hasEmptyResponse to true due to status:",
+              response.status
+            );
             setHasEmptyResponse(true);
             setData(null);
             return;
@@ -218,15 +232,19 @@ const useDriftAnalysisData = (projectId: string) => {
 
         const apiData = await response.json();
         console.log("API response data:", apiData);
-        
+
         // Check if the response indicates no drift data is available
-        if (!apiData || 
-            !apiData.metrics ||
-            (apiData.message && apiData.message.includes("No drift data")) ||
-            (Object.keys(apiData.metrics.feature_drift || {}).length === 0 && 
-             !apiData.metrics.label_drift && 
-             !apiData.metrics.covariate_drift)) {
-          console.log("Setting hasEmptyResponse to true due to empty/no drift data");
+        if (
+          !apiData ||
+          !apiData.metrics ||
+          (apiData.message && apiData.message.includes("No drift data")) ||
+          (Object.keys(apiData.metrics.feature_drift || {}).length === 0 &&
+            !apiData.metrics.label_drift &&
+            !apiData.metrics.covariate_drift)
+        ) {
+          console.log(
+            "Setting hasEmptyResponse to true due to empty/no drift data"
+          );
           setHasEmptyResponse(true);
           setData(null);
         } else {
@@ -604,42 +622,49 @@ const mockDriftData: DriftApiResponse = {
 };
 
 // Production Dataset Upload Component
-const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, models: ModelInfo[] }) => {
-  const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'analyzing' | 'complete' | 'error'>('idle');
+const ProductionDatasetUpload = ({
+  projectId,
+  models,
+}: {
+  projectId: string;
+  models: ModelInfo[];
+}) => {
+  const [uploadState, setUploadState] = useState<
+    "idle" | "uploading" | "analyzing" | "complete" | "error"
+  >("idle");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string>('');
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [uploadProgress, setUploadProgress] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState<string>("");
 
-  const baseUrl = import.meta.env?.VITE_API_BASE_URL || 
-    "https://prism-backend-dot-block-convey-p1.uc.r.appspot.com";
+  const baseUrl = import.meta.env?.VITE_API_BASE_URL || "http://localhost:8000";
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setErrorMessage('');
+      setErrorMessage("");
     }
   };
 
   const handleDriftAnalysis = async () => {
     if (!selectedFile || !selectedModel) {
-      setErrorMessage('Please select both a model and upload a dataset');
+      setErrorMessage("Please select both a model and upload a dataset");
       return;
     }
 
     try {
-      setUploadState('uploading');
-      setUploadProgress('Uploading production dataset...');
+      setUploadState("uploading");
+      setUploadProgress("Uploading production dataset...");
 
       const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('model_id', selectedModel);
-      formData.append('project_id', projectId);
+      formData.append("file", selectedFile);
+      formData.append("model_id", selectedModel);
+      formData.append("project_id", projectId);
 
       const accessToken = localStorage.getItem("access_token");
       const response = await fetch(`${baseUrl}/ml/drift/analyze`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -650,23 +675,24 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
         throw new Error(`Upload failed: ${response.statusText}`);
       }
 
-      setUploadState('analyzing');
-      setUploadProgress('Analyzing drift patterns...');
+      setUploadState("analyzing");
+      setUploadProgress("Analyzing drift patterns...");
 
       const result = await response.json();
-      
-      setUploadState('complete');
-      setUploadProgress('Drift analysis complete! Refreshing page...');
-      
+
+      setUploadState("complete");
+      setUploadProgress("Drift analysis complete! Refreshing page...");
+
       // Refresh the page to show new drift data
       setTimeout(() => {
         window.location.reload();
       }, 2000);
-
     } catch (error) {
-      console.error('Drift analysis failed:', error);
-      setUploadState('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Analysis failed');
+      console.error("Drift analysis failed:", error);
+      setUploadState("error");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Analysis failed"
+      );
     }
   };
 
@@ -681,7 +707,9 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
             Enable Drift Analysis
           </h2>
           <p className="text-gray-600">
-            Models were found for this project, but no drift analysis data is available. Please upload your production dataset below to perform drift analysis.
+            Models were found for this project, but no drift analysis data is
+            available. Please upload your production dataset below to perform
+            drift analysis.
           </p>
         </div>
 
@@ -695,7 +723,9 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={uploadState === 'uploading' || uploadState === 'analyzing'}
+              disabled={
+                uploadState === "uploading" || uploadState === "analyzing"
+              }
             >
               <option value="">Choose a model...</option>
               {models.map((model) => (
@@ -718,7 +748,9 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
                 accept=".csv,.json,.xlsx,.xls"
                 onChange={handleFileUpload}
                 className="hidden"
-                disabled={uploadState === 'uploading' || uploadState === 'analyzing'}
+                disabled={
+                  uploadState === "uploading" || uploadState === "analyzing"
+                }
               />
               <label
                 htmlFor="production-dataset"
@@ -726,7 +758,9 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
               >
                 <Upload className="h-8 w-8 text-gray-400 mb-2" />
                 <span className="text-sm text-gray-600">
-                  {selectedFile ? selectedFile.name : 'Click to upload production dataset'}
+                  {selectedFile
+                    ? selectedFile.name
+                    : "Click to upload production dataset"}
                 </span>
                 <span className="text-xs text-gray-500 mt-1">
                   Supports CSV, JSON, Excel files
@@ -736,20 +770,25 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
           </div>
 
           {/* Progress Display */}
-          {uploadState !== 'idle' && (
+          {uploadState !== "idle" && (
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center">
-                {uploadState === 'error' ? (
+                {uploadState === "error" ? (
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-                ) : uploadState === 'complete' ? (
+                ) : uploadState === "complete" ? (
                   <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                 ) : (
                   <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
                 )}
-                <span className={`text-sm font-medium ${
-                  uploadState === 'error' ? 'text-red-600' : 
-                  uploadState === 'complete' ? 'text-green-600' : 'text-blue-600'
-                }`}>
+                <span
+                  className={`text-sm font-medium ${
+                    uploadState === "error"
+                      ? "text-red-600"
+                      : uploadState === "complete"
+                      ? "text-green-600"
+                      : "text-blue-600"
+                  }`}
+                >
                   {uploadProgress}
                 </span>
               </div>
@@ -766,12 +805,19 @@ const ProductionDatasetUpload = ({ projectId, models }: { projectId: string, mod
           {/* Submit Button */}
           <Button
             onClick={handleDriftAnalysis}
-            disabled={!selectedFile || !selectedModel || uploadState === 'uploading' || uploadState === 'analyzing'}
+            disabled={
+              !selectedFile ||
+              !selectedModel ||
+              uploadState === "uploading" ||
+              uploadState === "analyzing"
+            }
             className="w-full"
           >
-            {uploadState === 'uploading' ? 'Uploading...' : 
-             uploadState === 'analyzing' ? 'Analyzing...' : 
-             'Start Drift Analysis'}
+            {uploadState === "uploading"
+              ? "Uploading..."
+              : uploadState === "analyzing"
+              ? "Analyzing..."
+              : "Start Drift Analysis"}
           </Button>
         </div>
       </div>
@@ -785,13 +831,25 @@ const DriftAnalysisPage: React.FC = () => {
 
   // Use mock data for dummy projects
   const { data, loading, error, hasEmptyResponse } = isDummyProject
-    ? { data: mockDriftData, loading: false, error: null, hasEmptyResponse: false }
+    ? {
+        data: mockDriftData,
+        loading: false,
+        error: null,
+        hasEmptyResponse: false,
+      }
     : useDriftAnalysisData(id || "");
 
   // Check if models exist for this project
-  const { modelsExist, modelsLoading, models, setModels, setModelsExist } = isDummyProject
-    ? { modelsExist: true, modelsLoading: false, models: [], setModels: () => {}, setModelsExist: () => {} }
-    : useModelsExist(id || "");
+  const { modelsExist, modelsLoading, models, setModels, setModelsExist } =
+    isDummyProject
+      ? {
+          modelsExist: true,
+          modelsLoading: false,
+          models: [],
+          setModels: () => {},
+          setModelsExist: () => {},
+        }
+      : useModelsExist(id || "");
 
   // Debug logging
   console.log("DriftAnalysisPage state:", {
@@ -803,8 +861,10 @@ const DriftAnalysisPage: React.FC = () => {
     modelsExist,
     modelsLoading,
     modelsCount: models.length,
-    shouldShowUpload: (hasEmptyResponse || !data) && modelsExist && models.length > 0,
-    shouldShowEmpty: (hasEmptyResponse || !data) && (!modelsExist || models.length === 0)
+    shouldShowUpload:
+      (hasEmptyResponse || !data) && modelsExist && models.length > 0,
+    shouldShowEmpty:
+      (hasEmptyResponse || !data) && (!modelsExist || models.length === 0),
   });
 
   const breadcrumbSegments = [
@@ -852,13 +912,13 @@ const DriftAnalysisPage: React.FC = () => {
 
   // Empty response or no data state (show production upload if models exist)
   if (hasEmptyResponse || !data) {
-    console.log("No drift data available. State:", { 
-      hasEmptyResponse, 
-      modelsExist, 
+    console.log("No drift data available. State:", {
+      hasEmptyResponse,
+      modelsExist,
       modelsCount: models.length,
-      data: !!data 
+      data: !!data,
     });
-    
+
     return (
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
@@ -889,21 +949,29 @@ const DriftAnalysisPage: React.FC = () => {
                     Production Data Required for Drift Analysis
                   </h3>
                   <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                    Your models are ready, but no production data was provided during model upload. 
-                    To perform drift analysis and monitor data changes over time, please upload your production dataset.
+                    Your models are ready, but no production data was provided
+                    during model upload. To perform drift analysis and monitor
+                    data changes over time, please upload your production
+                    dataset.
                   </p>
-                  
+
                   <Button
-                    onClick={() => window.location.href = `/projects/${id}/upload`}
+                    onClick={() =>
+                      (window.location.href = `/projects/${id}/upload`)
+                    }
                     className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 shadow-sm"
                   >
                     Upload Production Data
                   </Button>
-                  
+
                   <div className="mt-6 bg-blue-50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">What happens next?</h4>
+                    <h4 className="text-sm font-medium text-blue-800 mb-2">
+                      What happens next?
+                    </h4>
                     <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Upload your production dataset (CSV, JSON, or Excel)</li>
+                      <li>
+                        • Upload your production dataset (CSV, JSON, or Excel)
+                      </li>
                       <li>• Select the model you want to analyze</li>
                       <li>• Get comprehensive drift analysis results</li>
                     </ul>
