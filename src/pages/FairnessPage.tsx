@@ -240,7 +240,7 @@ const FairnessPage: React.FC = () => {
         <div className="absolute right-0 z-10 w-64 mt-2 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg">
           <div className="py-1" role="menu">
             {models.map((model, index) => {
-              const displayName = `Model ${model.model_id} v${model.model_version}`;
+              const displayName = `Model v${model.model_version}`;
               return (
                 <button
                   key={`${model.model_id}-${model.model_version}`}
@@ -262,12 +262,7 @@ const FairnessPage: React.FC = () => {
                   }`}
                   role="menuitem"
                 >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{displayName}</span>
-                    <span className="text-xs text-gray-500">
-                      Dataset ID: {model.dataset_id}
-                    </span>
-                  </div>
+                  <span className="font-medium">{displayName}</span>
                 </button>
               );
             })}

@@ -329,6 +329,14 @@ const UploadModal = ({
     } else {
       setCurrentStep(currentStep + 1);
     }
+    
+    // Scroll to top of modal when moving to next step
+    setTimeout(() => {
+      const modalBody = document.querySelector('.p-8.overflow-y-auto');
+      if (modalBody) {
+        modalBody.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   const handlePrev = () => {
@@ -338,6 +346,14 @@ const UploadModal = ({
     } else {
       setCurrentStep(currentStep - 1);
     }
+    
+    // Scroll to top of modal when moving to previous step
+    setTimeout(() => {
+      const modalBody = document.querySelector('.p-8.overflow-y-auto');
+      if (modalBody) {
+        modalBody.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   const handleSubmit = async () => {
@@ -1155,8 +1171,13 @@ const UploadModal = ({
         <div className="p-8 overflow-y-auto max-h-[calc(95vh-120px)]">
                   {/* Steps */}
         <div className="flex mb-12 w-full">
-          {["Model Upload", "Dataset Details", "Drift Analysis", "Preview"].map(
-            (step, index) => (
+          {(() => {
+            const baseSteps = ["Model Upload", "Dataset Details"];
+            const finalSteps = formData.model_stage === "production" 
+              ? [...baseSteps, "Drift Analysis", "Preview"]
+              : [...baseSteps, "Preview"];
+            
+            return finalSteps.map((step, index) => (
               <div key={index} className="flex-1">
                 <div
                   className={`flex items-center ${index > 0 ? "ml-4" : ""}`}
@@ -1183,12 +1204,12 @@ const UploadModal = ({
                     <div className="text-sm text-gray-400 mt-1">
                       {index === 0 && "Upload and configure model"}
                       {index === 1 && "Configure training data"}
-                      {index === 2 && "Configure drift analysis"}
-                      {index === 3 && "Review and submit"}
+                      {index === 2 && formData.model_stage === "production" && "Configure drift analysis"}
+                      {((index === 2 && formData.model_stage !== "production") || (index === 3 && formData.model_stage === "production")) && "Review and submit"}
                     </div>
                   </div>
                 </div>
-                {index < 3 && (
+                {index < finalSteps.length - 1 && (
                   <div
                     className={`h-1 mt-6 mx-4 rounded-full transition-all duration-500 ${
                       currentStep > index 
@@ -1198,8 +1219,8 @@ const UploadModal = ({
                   ></div>
                 )}
               </div>
-            )
-          )}
+            ));
+          })()}
         </div>
 
           {/* GitHub Import Section - Only show if connected */}
@@ -1585,7 +1606,6 @@ const UploadModal = ({
                       <option value="in_training">In Training (Under development)</option>
                       <option value="post_training">Post Training (Trained but not deployed)</option>
                       <option value="production">Production (Deployed and serving)</option>
-                      <option value="experimental">Experimental (Research/Testing)</option>
                     </select>
                     <p className="text-sm text-gray-500 mt-2">
                       This helps determine what datasets and validation we need
@@ -2521,7 +2541,10 @@ const UploadModal = ({
               </div>
             )}
 
-            {((currentStep === 3 && formData.model_stage === "production") || (currentStep === 2 && formData.model_stage !== "production")) && (
+            {(
+              (formData.model_stage === "production" && currentStep === 3) ||
+              (formData.model_stage !== "production" && (currentStep === 2 || currentStep === 3))
+            ) && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h5 className="text-2xl font-light text-gray-800 mb-2">
