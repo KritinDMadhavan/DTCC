@@ -118,6 +118,36 @@ interface AssessmentData {
   thirdPartyRisksDescription: string;
   loggingPractices: string;
   loggingPracticesDescription: string;
+  performanceMetricsMonitoring: string;
+  performanceMetricsMonitoringDescription: string;
+  traceabilityMeasures: string;
+  traceabilityMeasuresDescription: string;
+  inputDataQualityMeasures: string;
+  inputDataQualityMeasuresDescription: string;
+  dataTraceabilityDecisions: string;
+  dataTraceabilityDecisionsDescription: string;
+  modelRulesTraceability: string;
+  modelRulesTraceabilityDescription: string;
+  explanationsProvided: string;
+  explanationsProvidedDescription: string;
+  personalInfoTraining: string;
+  personalInfoTrainingDescription: string;
+  dataQualityAutomated: string;
+  dataQualityAutomatedDescription: string;
+  biasStrategyEstablished: string;
+  biasStrategyEstablishedDescription: string;
+  diversityRepresentativeness: string;
+  diversityRepresentativenessDescription: string;
+  biasTestingMonitoring: string;
+  biasTestingMonitoringDescription: string;
+  biasIssuesMitigation: string;
+  biasIssuesMitigationDescription: string;
+  aiLifecycleInfoLimited: string;
+  aiLifecycleInfoLimitedDescription: string;
+  sufficientInfoProvidedAutomated: string;
+  sufficientInfoProvidedAutomatedDescription: string;
+  trustworthinessChecks: string;
+  trustworthinessChecksDescription: string;
 }
 
 // Add comprehensive analysis framework after the existing interfaces
@@ -244,6 +274,36 @@ const RiskAssessmentPage: React.FC = () => {
     thirdPartyRisksDescription: "",
     loggingPractices: "",
     loggingPracticesDescription: "",
+    performanceMetricsMonitoring: "",
+    performanceMetricsMonitoringDescription: "",
+    traceabilityMeasures: "",
+    traceabilityMeasuresDescription: "",
+    inputDataQualityMeasures: "",
+    inputDataQualityMeasuresDescription: "",
+    dataTraceabilityDecisions: "",
+    dataTraceabilityDecisionsDescription: "",
+    modelRulesTraceability: "",
+    modelRulesTraceabilityDescription: "",
+    explanationsProvided: "",
+    explanationsProvidedDescription: "",
+    personalInfoTraining: "",
+    personalInfoTrainingDescription: "",
+    dataQualityAutomated: "",
+    dataQualityAutomatedDescription: "",
+    biasStrategyEstablished: "",
+    biasStrategyEstablishedDescription: "",
+    diversityRepresentativeness: "",
+    diversityRepresentativenessDescription: "",
+    biasTestingMonitoring: "",
+    biasTestingMonitoringDescription: "",
+    biasIssuesMitigation: "",
+    biasIssuesMitigationDescription: "",
+    aiLifecycleInfoLimited: "",
+    aiLifecycleInfoLimitedDescription: "",
+    sufficientInfoProvidedAutomated: "",
+    sufficientInfoProvidedAutomatedDescription: "",
+    trustworthinessChecks: "",
+    trustworthinessChecksDescription: "",
   });
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
@@ -427,6 +487,36 @@ const RiskAssessmentPage: React.FC = () => {
         thirdPartyRisksDescription: "",
         loggingPractices: "",
         loggingPracticesDescription: "",
+        performanceMetricsMonitoring: "",
+        performanceMetricsMonitoringDescription: "",
+        traceabilityMeasures: "",
+        traceabilityMeasuresDescription: "",
+        inputDataQualityMeasures: "",
+        inputDataQualityMeasuresDescription: "",
+        dataTraceabilityDecisions: "",
+        dataTraceabilityDecisionsDescription: "",
+        modelRulesTraceability: "",
+        modelRulesTraceabilityDescription: "",
+        explanationsProvided: "",
+        explanationsProvidedDescription: "",
+        personalInfoTraining: "",
+        personalInfoTrainingDescription: "",
+        dataQualityAutomated: "",
+        dataQualityAutomatedDescription: "",
+        biasStrategyEstablished: "",
+        biasStrategyEstablishedDescription: "",
+        diversityRepresentativeness: "",
+        diversityRepresentativenessDescription: "",
+        biasTestingMonitoring: "",
+        biasTestingMonitoringDescription: "",
+        biasIssuesMitigation: "",
+        biasIssuesMitigationDescription: "",
+        aiLifecycleInfoLimited: "",
+        aiLifecycleInfoLimitedDescription: "",
+        sufficientInfoProvidedAutomated: "",
+        sufficientInfoProvidedAutomatedDescription: "",
+        trustworthinessChecks: "",
+        trustworthinessChecksDescription: "",
       });
       setLastUpdated(new Date());
       setAutoSectionsCompleted(new Set());
@@ -553,6 +643,12 @@ INSTRUCTIONS:
 - "No" = The evaluation data shows mechanisms/measures are NOT in place
 - "N/A" = The evaluation data is insufficient or not applicable
 
+SPECIAL LOGIC FOR PERSONAL INFORMATION QUESTIONS:
+- If the question is about personal information training and the data contains a "sensitive_features" array:
+  * If "sensitive_features" array is empty or null → Answer "No" (not using personal info)
+  * If "sensitive_features" array has items → Answer "Yes" (using personal info)
+  * If "sensitive_features" array doesn't exist → Answer "N/A" (cannot determine)
+
 ANSWER:`,
                   },
                 ],
@@ -647,9 +743,428 @@ ANSWER:`,
           `💾 Updated assessment data with result: ${impactAssessmentResult}`
         );
 
-        // Mark section as auto-completed (N/A is also a valid result)
-        setAutoSectionsCompleted(new Set([3]));
-        console.log(`✅ Marked Section 3 as auto-completed`);
+        // Evaluate Section 5, Question 5: Performance Metrics
+        console.log(`🎯 Starting evaluation for Section 5, Question 5`);
+        const performanceMetricsResult = await evaluateAutomatedQuestion(
+          "Section5_Q5",
+          `http://localhost:8000/ml/performance/${id}/${modelId}/${modelVersion}`,
+          "Are procedures and relevant performance metrics in place to monitor and document the AI system's accuracy, performance, and reliability?"
+        );
+        console.log(
+          `📋 Performance metrics evaluation result: ${performanceMetricsResult}`
+        );
+
+        // Update assessment data with performance metrics result
+        setAssessmentData((prev) => ({
+          ...prev,
+          performanceMetricsMonitoring: performanceMetricsResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with performance metrics result: ${performanceMetricsResult}`
+        );
+
+        // Evaluate Section 6, Question 1: Traceability Measures (automatic "no")
+        console.log(`🎯 Starting evaluation for Section 6, Question 1`);
+        const traceabilityResult = "no"; // Automatic "no" as requested
+        console.log(`📋 Traceability evaluation result: ${traceabilityResult}`);
+
+        // Update assessment data with traceability result
+        setAssessmentData((prev) => ({
+          ...prev,
+          traceabilityMeasures: traceabilityResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with traceability result: ${traceabilityResult}`
+        );
+
+        // Evaluate Section 6, Question 2: Input Data Quality Measures (automatic "no")
+        console.log(`🎯 Starting evaluation for Section 6, Question 2`);
+        const inputDataQualityResult = "no"; // Automatic "no" as requested
+        console.log(
+          `📋 Input data quality evaluation result: ${inputDataQualityResult}`
+        );
+
+        // Update assessment data with input data quality result
+        setAssessmentData((prev) => ({
+          ...prev,
+          inputDataQualityMeasures: inputDataQualityResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with input data quality result: ${inputDataQualityResult}`
+        );
+
+        // Evaluate Section 6, Question 3: Data Traceability to Decisions
+        console.log(`🎯 Starting evaluation for Section 6, Question 3`);
+        const dataTraceabilityResult = await evaluateAutomatedQuestion(
+          "Section6_Q3",
+          `http://localhost:8000/ml/explainability/${id}/${modelId}/${modelVersion}`,
+          "Is the data used by the AI system traceable to the decisions it makes?"
+        );
+        console.log(
+          `📋 Data traceability evaluation result: ${dataTraceabilityResult}`
+        );
+
+        // Update assessment data with data traceability result
+        setAssessmentData((prev) => ({
+          ...prev,
+          dataTraceabilityDecisions: dataTraceabilityResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with data traceability result: ${dataTraceabilityResult}`
+        );
+
+        // Evaluate Section 6, Question 4: Model Rules Traceability
+        console.log(`🎯 Starting evaluation for Section 6, Question 4`);
+        const modelRulesTraceabilityResult = await evaluateAutomatedQuestion(
+          "Section6_Q4",
+          `http://localhost:8000/ml/explainability/${id}/${modelId}/${modelVersion}`,
+          "Are the AI models or rules traceable that led to decisions/recommendations of the AI system?"
+        );
+        console.log(
+          `📋 Model rules traceability evaluation result: ${modelRulesTraceabilityResult}`
+        );
+
+        // Update assessment data with model rules traceability result
+        setAssessmentData((prev) => ({
+          ...prev,
+          modelRulesTraceability: modelRulesTraceabilityResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with model rules traceability result: ${modelRulesTraceabilityResult}`
+        );
+
+        // Evaluate Section 6, Question 5: Explanations Provided
+        console.log(`🎯 Starting evaluation for Section 6, Question 5`);
+        const explanationsProvidedResult = await evaluateAutomatedQuestion(
+          "Section6_Q5",
+          `http://localhost:8000/ml/explainability/${id}/${modelId}/${modelVersion}`,
+          "Are explanations of the AI system's decisions provided to relevant users/stakeholders?"
+        );
+        console.log(
+          `📋 Explanations provided evaluation result: ${explanationsProvidedResult}`
+        );
+
+        // Update assessment data with explanations provided result
+        setAssessmentData((prev) => ({
+          ...prev,
+          explanationsProvided: explanationsProvidedResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with explanations provided result: ${explanationsProvidedResult}`
+        );
+
+        // Evaluate Section 7, Question 1: Personal Information Training
+        console.log(`🎯 Starting evaluation for Section 7, Question 1`);
+        const personalInfoTrainingResult = await evaluateAutomatedQuestion(
+          "Section7_Q1",
+          `http://localhost:8000/ml/fairness/${id}/${modelId}/${modelVersion}`,
+          "Is the AI system being trained or developed using personal information?"
+        );
+        console.log(
+          `📋 Personal info training evaluation result: ${personalInfoTrainingResult}`
+        );
+
+        // Update assessment data with personal info training result
+        setAssessmentData((prev) => ({
+          ...prev,
+          personalInfoTraining: personalInfoTrainingResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with personal info training result: ${personalInfoTrainingResult}`
+        );
+
+        // Evaluate Section 7, Question 2: Data Quality (automatic "no")
+        console.log(`🎯 Starting evaluation for Section 7, Question 2`);
+        const dataQualityAutomatedResult = "no"; // Automatic "no" as requested
+        console.log(
+          `📋 Data quality automated evaluation result: ${dataQualityAutomatedResult}`
+        );
+
+        // Update assessment data with data quality automated result
+        setAssessmentData((prev) => ({
+          ...prev,
+          dataQualityAutomated: dataQualityAutomatedResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with data quality automated result: ${dataQualityAutomatedResult}`
+        );
+
+        // Evaluate Section 8, Question 1: Bias Strategy (automatic "no")
+        console.log(`🎯 Starting evaluation for Section 8, Question 1`);
+        const biasStrategyResult = "no"; // Automatic "no" as requested
+        console.log(
+          `📋 Bias strategy evaluation result: ${biasStrategyResult}`
+        );
+
+        // Update assessment data with bias strategy result
+        setAssessmentData((prev) => ({
+          ...prev,
+          biasStrategyEstablished: biasStrategyResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with bias strategy result: ${biasStrategyResult}`
+        );
+
+        // Evaluate Section 8, Question 2: Diversity and Representativeness
+        console.log(`🎯 Starting evaluation for Section 8, Question 2`);
+        const diversityRepresentativenessResult =
+          await evaluateAutomatedQuestion(
+            "Section8_Q2",
+            `http://localhost:8000/ml/fairness/${id}/${modelId}/${modelVersion}`,
+            "Is diversity and representativeness of end-users considered in the data used for the AI system?"
+          );
+        console.log(
+          `📋 Diversity and representativeness evaluation result: ${diversityRepresentativenessResult}`
+        );
+
+        // Update assessment data with diversity and representativeness result
+        setAssessmentData((prev) => ({
+          ...prev,
+          diversityRepresentativeness: diversityRepresentativenessResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with diversity and representativeness result: ${diversityRepresentativenessResult}`
+        );
+
+        // Evaluate Section 9, Question 1: Bias Testing and Monitoring (automatic "no")
+        console.log(`🎯 Starting evaluation for Section 9, Question 1`);
+        const biasTestingMonitoringResult = "no"; // Automatic "no" as requested
+        console.log(
+          `📋 Bias testing and monitoring evaluation result: ${biasTestingMonitoringResult}`
+        );
+
+        // Update assessment data with bias testing and monitoring result
+        setAssessmentData((prev) => ({
+          ...prev,
+          biasTestingMonitoring: biasTestingMonitoringResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with bias testing and monitoring result: ${biasTestingMonitoringResult}`
+        );
+
+        // Evaluate Section 9, Question 2: Bias Issues Mitigation (automatic "no")
+        console.log(`🎯 Starting evaluation for Section 9, Question 2`);
+        const biasIssuesMitigationResult = "no"; // Automatic "no" as requested
+        console.log(
+          `📋 Bias issues mitigation evaluation result: ${biasIssuesMitigationResult}`
+        );
+
+        // Update assessment data with bias issues mitigation result
+        setAssessmentData((prev) => ({
+          ...prev,
+          biasIssuesMitigation: biasIssuesMitigationResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with bias issues mitigation result: ${biasIssuesMitigationResult}`
+        );
+
+        // Evaluate Section 9, Question 3: AI Lifecycle Information (automatic "yes")
+        console.log(`🎯 Starting evaluation for Section 9, Question 3`);
+        const aiLifecycleInfoLimitedResult = "yes"; // Automatic "yes" as requested
+        console.log(
+          `📋 AI lifecycle information limited evaluation result: ${aiLifecycleInfoLimitedResult}`
+        );
+
+        // Update assessment data with AI lifecycle information limited result
+        setAssessmentData((prev) => ({
+          ...prev,
+          aiLifecycleInfoLimited: aiLifecycleInfoLimitedResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with AI lifecycle information limited result: ${aiLifecycleInfoLimitedResult}`
+        );
+
+        // Evaluate Section 9, Question 4: Sufficient Information Provided (special logic)
+        console.log(`🎯 Starting evaluation for Section 9, Question 4`);
+
+        try {
+          // Check all three endpoints
+          const performanceResponse = await axios.get(
+            `http://localhost:8000/ml/performance/${id}/${modelId}/${modelVersion}`,
+            config
+          );
+          console.log(
+            `📊 Performance endpoint response status: ${performanceResponse.status}`
+          );
+
+          const fairnessResponse = await axios.get(
+            `http://localhost:8000/ml/fairness/${id}/${modelId}/${modelVersion}`,
+            config
+          );
+          console.log(
+            `📊 Fairness endpoint response status: ${fairnessResponse.status}`
+          );
+
+          const explainabilityResponse = await axios.get(
+            `http://localhost:8000/ml/explainability/${id}/${modelId}/${modelVersion}`,
+            config
+          );
+          console.log(
+            `📊 Explainability endpoint response status: ${explainabilityResponse.status}`
+          );
+
+          // Check if all endpoints returned 2xx status codes
+          if (
+            performanceResponse.status >= 200 &&
+            performanceResponse.status < 300 &&
+            fairnessResponse.status >= 200 &&
+            fairnessResponse.status < 300 &&
+            explainabilityResponse.status >= 200 &&
+            explainabilityResponse.status < 300
+          ) {
+            // Check if all responses have data (not empty)
+            const performanceData = performanceResponse.data;
+            const fairnessData = fairnessResponse.data;
+            const explainabilityData = explainabilityResponse.data;
+
+            console.log(
+              `📊 Performance data available:`,
+              !!performanceData && Object.keys(performanceData).length > 0
+            );
+            console.log(
+              `📊 Fairness data available:`,
+              !!fairnessData && Object.keys(fairnessData).length > 0
+            );
+            console.log(
+              `📊 Explainability data available:`,
+              !!explainabilityData && Object.keys(explainabilityData).length > 0
+            );
+
+            if (
+              performanceData &&
+              Object.keys(performanceData).length > 0 &&
+              fairnessData &&
+              Object.keys(fairnessData).length > 0 &&
+              explainabilityData &&
+              Object.keys(explainabilityData).length > 0
+            ) {
+              // All endpoints have data, send to Gemini for analysis
+              console.log(`🤖 Sending data to Gemini for analysis...`);
+
+              const combinedData = {
+                performance: performanceData,
+                fairness: fairnessData,
+                explainability: explainabilityData,
+              };
+
+              const geminiResponse = await fetch(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=AIzaSyCb8vE2NtQApNeMNsZ6ZfaG0Wtxyzl3pGE",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    contents: [
+                      {
+                        parts: [
+                          {
+                            text: `You are an AI Risk Assessment expert. Analyze the following evaluation data and answer the question with ONLY "Yes" or "N/A".
+
+EVALUATION DATA:
+${JSON.stringify(combinedData, null, 2)}
+
+QUESTION: Is sufficient information provided to relevant AI actors to assist in making informed decisions?
+
+Based on the data from performance, fairness, and explainability endpoints, determine if there is sufficient information available for AI actors to make informed decisions.
+
+- "Yes" = Sufficient information is available from all three endpoints
+- "N/A" = The evaluation data is insufficient or not applicable
+
+ANSWER:`,
+                          },
+                        ],
+                      },
+                    ],
+                  }),
+                }
+              );
+
+              if (!geminiResponse.ok) {
+                console.log(`❌ Gemini API error: ${geminiResponse.status}`);
+                const sufficientInfoResult = "na";
+                setAssessmentData((prev) => ({
+                  ...prev,
+                  sufficientInfoProvidedAutomated: sufficientInfoResult,
+                }));
+                console.log(
+                  `📋 Sufficient info evaluation result: ${sufficientInfoResult}`
+                );
+              } else {
+                const geminiData = await geminiResponse.json();
+                const geminiAnswer =
+                  geminiData.candidates?.[0]?.content?.parts?.[0]?.text
+                    ?.trim()
+                    .toLowerCase();
+                console.log(`🤖 Gemini response: ${geminiAnswer}`);
+
+                const sufficientInfoResult =
+                  geminiAnswer === "yes" ? "yes" : "na";
+                setAssessmentData((prev) => ({
+                  ...prev,
+                  sufficientInfoProvidedAutomated: sufficientInfoResult,
+                }));
+                console.log(
+                  `📋 Sufficient info evaluation result: ${sufficientInfoResult}`
+                );
+              }
+            } else {
+              // One or more endpoints returned empty data
+              console.log(`⚠️ One or more endpoints returned empty data`);
+              const sufficientInfoResult = "na";
+              setAssessmentData((prev) => ({
+                ...prev,
+                sufficientInfoProvidedAutomated: sufficientInfoResult,
+              }));
+              console.log(
+                `📋 Sufficient info evaluation result: ${sufficientInfoResult}`
+              );
+            }
+          } else {
+            // One or more endpoints returned non-2xx status
+            console.log(`⚠️ One or more endpoints returned non-2xx status`);
+            const sufficientInfoResult = "na";
+            setAssessmentData((prev) => ({
+              ...prev,
+              sufficientInfoProvidedAutomated: sufficientInfoResult,
+            }));
+            console.log(
+              `📋 Sufficient info evaluation result: ${sufficientInfoResult}`
+            );
+          }
+        } catch (error) {
+          console.log(`❌ Error evaluating sufficient info:`, error);
+          const sufficientInfoResult = "na";
+          setAssessmentData((prev) => ({
+            ...prev,
+            sufficientInfoProvidedAutomated: sufficientInfoResult,
+          }));
+          console.log(
+            `📋 Sufficient info evaluation result: ${sufficientInfoResult}`
+          );
+        }
+
+        // Evaluate Section 10, Question 3: Trustworthiness Checks (automatic "no")
+        console.log(`🎯 Starting evaluation for Section 10, Question 3`);
+        const trustworthinessChecksResult = "no"; // Automatic "no" as requested
+        console.log(
+          `📋 Trustworthiness checks evaluation result: ${trustworthinessChecksResult}`
+        );
+
+        // Update assessment data with trustworthiness checks result
+        setAssessmentData((prev) => ({
+          ...prev,
+          trustworthinessChecks: trustworthinessChecksResult,
+        }));
+        console.log(
+          `💾 Updated assessment data with trustworthiness checks result: ${trustworthinessChecksResult}`
+        );
+
+        // Mark sections as auto-completed (N/A is also a valid result)
+        setAutoSectionsCompleted(new Set([3, 5, 6, 7, 8, 9, 10]));
+        console.log(
+          `✅ Marked Sections 3, 5, 6, 7, 8, 9, and 10 as auto-completed`
+        );
       } else {
         console.log(`⚠️ No model data found for project: ${id}`);
         setAutoSectionsCompleted(new Set());
@@ -5907,94 +6422,88 @@ Add disclaimer if many responses are "no" or missing.`,
                 "Ensure regular updates of defense measures (e.g., adversarial retraining)."
               )}
 
-              {autoSectionsCompleted.has(5) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are procedures and relevant performance metrics in place to
-                    monitor and document the AI system's accuracy, performance,
-                    and reliability?
-                  </label>
+              {/* Question: Performance Metrics Monitoring */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are procedures and relevant performance metrics in place to
+                  monitor and document the AI system's accuracy, performance,
+                  and reliability?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.performanceMetricsMonitoring === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.performanceMetricsMonitoring !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="performanceMetrics"
+                        name="performanceMetricsMonitoring"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={
+                          assessmentData.performanceMetricsMonitoring === "yes"
+                        }
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="performanceMetrics"
+                        name="performanceMetricsMonitoring"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.performanceMetricsMonitoring === "no"
+                        }
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="performanceMetrics"
+                        name="performanceMetricsMonitoring"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.performanceMetricsMonitoring === "na"
+                        }
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are procedures and relevant performance metrics in place to
-                    monitor and document the AI system's accuracy, performance,
-                    and reliability?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="performanceMetrics"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="performanceMetrics"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="performanceMetrics"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {renderRadioGroup(
                 "Are processes in place to establish and track security tests and metrics?",
@@ -6023,354 +6532,323 @@ Add disclaimer if many responses are "no" or missing.`,
                 maintained, and AI decisions are interpreted as expected.
               </div>
 
-              {/* Auto-completed questions */}
-              {autoSectionsCompleted.has(6) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are measures in place to address the traceability of the AI
-                    system during its entire lifecycle?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemTraceability"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemTraceability"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemTraceability"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are measures in place to address the traceability of the AI
-                    system during its entire lifecycle?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemTraceability"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemTraceability"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemTraceability"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+              {/* Question: Traceability Measures */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are measures in place to address the traceability of the AI
+                  system during its entire lifecycle?
+                </label>
 
-              {autoSectionsCompleted.has(6) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are measures in place to continuously assess the quality of
-                    the input data to the AI system?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataQualityAssessment"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataQualityAssessment"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataQualityAssessment"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.traceabilityMeasures === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are measures in place to continuously assess the quality of
-                    the input data to the AI system?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataQualityAssessment"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataQualityAssessment"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataQualityAssessment"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
 
-              {autoSectionsCompleted.has(6) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is the data used by the AI system traceable to the decisions
-                    it makes?
-                  </label>
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.traceabilityMeasures !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="dataTraceability"
+                        name="traceabilityMeasures"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={assessmentData.traceabilityMeasures === "yes"}
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="dataTraceability"
+                        name="traceabilityMeasures"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.traceabilityMeasures === "no"}
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="dataTraceability"
+                        name="traceabilityMeasures"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.traceabilityMeasures === "na"}
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is the data used by the AI system traceable to the decisions
-                    it makes?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataTraceability"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataTraceability"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dataTraceability"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {autoSectionsCompleted.has(6) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are the AI models or rules traceable that led to
-                    decisions/recommendations of the AI system?
-                  </label>
+              {/* Question: Input Data Quality Measures */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are measures in place to continuously assess the quality of
+                  the input data to the AI system?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.inputDataQualityMeasures === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.inputDataQualityMeasures !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="modelTraceability"
+                        name="inputDataQualityMeasures"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={
+                          assessmentData.inputDataQualityMeasures === "yes"
+                        }
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="modelTraceability"
+                        name="inputDataQualityMeasures"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.inputDataQualityMeasures === "no"
+                        }
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="modelTraceability"
+                        name="inputDataQualityMeasures"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.inputDataQualityMeasures === "na"
+                        }
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
+                )}
+              </div>
+
+              {/* Question: Data Traceability to Decisions */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Is the data used by the AI system traceable to the decisions
+                  it makes?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.dataTraceabilityDecisions === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are the AI models or rules traceable that led to
-                    decisions/recommendations of the AI system?
-                  </label>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.dataTraceabilityDecisions !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="modelTraceability"
+                        name="dataTraceabilityDecisions"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.dataTraceabilityDecisions === "yes"
+                        }
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="modelTraceability"
+                        name="dataTraceabilityDecisions"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.dataTraceabilityDecisions === "no"
+                        }
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="modelTraceability"
+                        name="dataTraceabilityDecisions"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.dataTraceabilityDecisions === "na"
+                        }
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
+                )}
+              </div>
+
+              {/* Question: Model Rules Traceability */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are the AI models or rules traceable that led to
+                  decisions/recommendations of the AI system?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.modelRulesTraceability === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.modelRulesTraceability !== "" && (
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="modelRulesTraceability"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={
+                          assessmentData.modelRulesTraceability === "yes"
+                        }
+                      />
+                      <span className="text-sm text-gray-700">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="modelRulesTraceability"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.modelRulesTraceability === "no"}
+                      />
+                      <span className="text-sm text-gray-700">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="modelRulesTraceability"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.modelRulesTraceability === "na"}
+                      />
+                      <span className="text-sm text-gray-700">N/A</span>
+                    </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {/* Manual question */}
               {renderRadioGroup(
@@ -6384,92 +6862,81 @@ Add disclaimer if many responses are "no" or missing.`,
                 "Implement comprehensive logging for all AI decisions, inputs, and outputs."
               )}
 
-              {autoSectionsCompleted.has(6) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are explanations of the AI system's decisions provided to
-                    relevant users/stakeholders?
-                  </label>
+              {/* Question: Explanations Provided */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are explanations of the AI system's decisions provided to
+                  relevant users/stakeholders?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.explanationsProvided === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.explanationsProvided !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="aiExplanations"
+                        name="explanationsProvided"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={assessmentData.explanationsProvided === "yes"}
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="aiExplanations"
+                        name="explanationsProvided"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.explanationsProvided === "no"}
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="aiExplanations"
+                        name="explanationsProvided"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.explanationsProvided === "na"}
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are explanations of the AI system's decisions provided to
-                    relevant users/stakeholders?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiExplanations"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiExplanations"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiExplanations"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>,
             autoSectionsCompleted.has(6),
             autoSectionsCompleted.has(6) ? 5 : 0,
@@ -6481,72 +6948,81 @@ Add disclaimer if many responses are "no" or missing.`,
             7,
             "Privacy and Data Governance",
             <div className="space-y-6 pt-4">
-              {autoSectionsCompleted.has(7) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is the AI system being trained, or was it developed, by
-                    using or processing personal information?
-                  </label>
+              {/* Question: Personal Information Training */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Is the AI system being trained or developed using personal
+                  information?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.personalInfoTraining === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.personalInfoTraining !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="personalInfoUsed"
+                        name="personalInfoTraining"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={assessmentData.personalInfoTraining === "yes"}
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="personalInfoUsed"
+                        name="personalInfoTraining"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.personalInfoTraining === "no"}
                       />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is the AI system being trained, or was it developed, by
-                    using or processing personal information?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="personalInfoUsed"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="personalInfoUsed"
-                        value="no"
+                        name="personalInfoTraining"
+                        value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.personalInfoTraining === "na"}
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {renderTextArea(
                 "Please describe the categories of personal information used by the AI system and the legal basis for processing.",
@@ -6610,102 +7086,92 @@ Add disclaimer if many responses are "no" or missing.`,
                 "Provide processes for access, correction, and deletion of data."
               )}
 
+              {/* Question: Data Quality (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are measures in place to ensure that the data used to develop
+                  the AI system is up-to-date, complete, and representative of
+                  the AI environment?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.dataQualityAutomated === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.dataQualityAutomated !== "" && (
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="dataQualityAutomated"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.dataQualityAutomated === "yes"}
+                      />
+                      <span className="text-sm text-gray-700">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="dataQualityAutomated"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.dataQualityAutomated === "no"}
+                      />
+                      <span className="text-sm text-gray-700">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="dataQualityAutomated"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.dataQualityAutomated === "na"}
+                      />
+                      <span className="text-sm text-gray-700">N/A</span>
+                    </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {renderRadioGroup(
-                "Are measures in place to ensure that the data used to develop the AI system is up-to-date, complete, and representative of the AI environment?",
-                "dataQuality",
+                "Have risks been assessed in using datasets obtained from third parties?",
+                "thirdPartyRisks",
                 [
-                  { value: "yes", label: "Yes " },
+                  { value: "yes", label: "Yes" },
                   { value: "no", label: "No" },
                   { value: "na", label: "N/A" },
                 ],
-                "E.g. automated alerts when data distribution shifts or becomes stale."
-              )}
-
-              {autoSectionsCompleted.has(7) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Have risks been assessed in using datasets obtained from
-                    third parties?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="thirdPartyRisks"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="thirdPartyRisks"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="thirdPartyRisks"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Have risks been assessed in using datasets obtained from
-                    third parties?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="thirdPartyRisks"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="thirdPartyRisks"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="thirdPartyRisks"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
+                "Assess data quality, reliability, and compliance of third-party datasets."
               )}
             </div>,
             false,
@@ -6718,179 +7184,169 @@ Add disclaimer if many responses are "no" or missing.`,
             8,
             "Fairness and Unbiased AI",
             <div className="space-y-6 pt-4">
-              {autoSectionsCompleted.has(8) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is a strategy established to avoid creating or reinforcing
-                    unfair bias in the AI system?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="strategyEstablished"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="strategyEstablished"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="strategyEstablished"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is a strategy established to avoid creating or reinforcing
-                    unfair bias in the AI system?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="strategyEstablished"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="strategyEstablished"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="strategyEstablished"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+              {/* Question: Bias Strategy (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Is a strategy established to avoid creating or reinforcing
+                  unfair bias in the AI system?
+                </label>
 
-              {autoSectionsCompleted.has(8) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is diversity and representativeness of end-users considered
-                    in the data used for the AI system?
-                  </label>
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.biasStrategyEstablished === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.biasStrategyEstablished !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="diversityConsidered"
+                        name="biasStrategyEstablished"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={
+                          assessmentData.biasStrategyEstablished === "yes"
+                        }
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="diversityConsidered"
+                        name="biasStrategyEstablished"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.biasStrategyEstablished === "no"
+                        }
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="diversityConsidered"
+                        name="biasStrategyEstablished"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.biasStrategyEstablished === "na"
+                        }
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
+                )}
+              </div>
+
+              {/* Question: Diversity and Representativeness (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Is diversity and representativeness of end-users considered in
+                  the data used for the AI system?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.diversityRepresentativeness === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is diversity and representativeness of end-users considered
-                    in the data used for the AI system?
-                  </label>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.diversityRepresentativeness !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="diversityConsidered"
+                        name="diversityRepresentativeness"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.diversityRepresentativeness === "yes"
+                        }
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="diversityConsidered"
+                        name="diversityRepresentativeness"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.diversityRepresentativeness === "no"
+                        }
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="diversityConsidered"
+                        name="diversityRepresentativeness"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={
+                          assessmentData.diversityRepresentativeness === "na"
+                        }
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {renderRadioGroup(
                 "Are demographics of those involved in design and development documented to capture potential biases?",
@@ -6924,277 +7380,306 @@ Add disclaimer if many responses are "no" or missing.`,
             9,
             "Transparent and Accountable AI",
             <div className="space-y-6 pt-4">
-              {autoSectionsCompleted.has(9) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are mechanisms in place to test and monitor the AI system
-                    for potential biases during its lifecycle?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMonitoring"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMonitoring"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMonitoring"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are mechanisms in place to test and monitor the AI system
-                    for potential biases during its lifecycle?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMonitoring"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMonitoring"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMonitoring"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+              {/* Question: Bias Testing and Monitoring (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are mechanisms in place to test and monitor the AI system for
+                  potential biases during its lifecycle?
+                </label>
 
-              {autoSectionsCompleted.has(9) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are identified issues related to bias, discrimination, or
-                    poor performance mitigated?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMitigation"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMitigation"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMitigation"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.biasTestingMonitoring === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are identified issues related to bias, discrimination, or
-                    poor performance mitigated?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMitigation"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMitigation"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="biasMitigation"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
 
-              {autoSectionsCompleted.has(9) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is information about the AI lifecycle limited to what is
-                    necessary for stakeholders?
-                  </label>
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.biasTestingMonitoring !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="aiLifecycleInfo"
+                        name="biasTestingMonitoring"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={assessmentData.biasTestingMonitoring === "yes"}
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="aiLifecycleInfo"
+                        name="biasTestingMonitoring"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.biasTestingMonitoring === "no"}
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="radio"
-                        name="aiLifecycleInfo"
+                        name="biasTestingMonitoring"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.biasTestingMonitoring === "na"}
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is information about the AI lifecycle limited to what is
-                    necessary for stakeholders?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiLifecycleInfo"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiLifecycleInfo"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiLifecycleInfo"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {renderRadioGroup(
-                "Is sufficient information provided to relevant AI actors to assist in making informed decisions?",
-                "sufficientInfoProvided",
-                [
-                  { value: "yes", label: "Yes" },
-                  { value: "no", label: "No" },
-                  { value: "na", label: "N/A" },
-                ],
-                "Governance dashboards and risk reports for internal teams."
-              )}
+              {/* Question: Bias Issues Mitigation (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are identified issues related to bias, discrimination, or poor
+                  performance mitigated?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.biasIssuesMitigation === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.biasIssuesMitigation !== "" && (
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="biasIssuesMitigation"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.biasIssuesMitigation === "yes"}
+                      />
+                      <span className="text-sm text-gray-700">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="biasIssuesMitigation"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.biasIssuesMitigation === "no"}
+                      />
+                      <span className="text-sm text-gray-700">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="biasIssuesMitigation"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.biasIssuesMitigation === "na"}
+                      />
+                      <span className="text-sm text-gray-700">N/A</span>
+                    </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Question: AI Lifecycle Information Limited (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Is information about the AI lifecycle limited to what is
+                  necessary for stakeholders?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.aiLifecycleInfoLimited === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.aiLifecycleInfoLimited !== "" && (
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="aiLifecycleInfoLimited"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={
+                          assessmentData.aiLifecycleInfoLimited === "yes"
+                        }
+                      />
+                      <span className="text-sm text-gray-700">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="aiLifecycleInfoLimited"
+                        value="no"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.aiLifecycleInfoLimited === "no"}
+                      />
+                      <span className="text-sm text-gray-700">No</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="aiLifecycleInfoLimited"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={assessmentData.aiLifecycleInfoLimited === "na"}
+                      />
+                      <span className="text-sm text-gray-700">N/A</span>
+                    </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Question: Sufficient Information Provided (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Is sufficient information provided to relevant AI actors to
+                  assist in making informed decisions?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.sufficientInfoProvidedAutomated === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.sufficientInfoProvidedAutomated !== "" && (
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="sufficientInfoProvidedAutomated"
+                        value="yes"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={
+                          assessmentData.sufficientInfoProvidedAutomated ===
+                          "yes"
+                        }
+                      />
+                      <span className="text-sm text-gray-700">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="sufficientInfoProvidedAutomated"
+                        value="na"
+                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
+                        disabled={true}
+                        checked={
+                          assessmentData.sufficientInfoProvidedAutomated ===
+                          "na"
+                        }
+                      />
+                      <span className="text-sm text-gray-700">N/A</span>
+                    </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {renderRadioGroup(
                 "Are end users aware that they are interacting with an AI system and not a human?",
@@ -7250,184 +7735,63 @@ Add disclaimer if many responses are "no" or missing.`,
             10,
             "AI Accountability",
             <div className="space-y-6 pt-4">
-              {autoSectionsCompleted.has(10) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is a risk management system implemented to address risks
-                    identified in the AI system?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="riskManagementSystem"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="riskManagementSystem"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="riskManagementSystem"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Is a risk management system implemented to address risks
-                    identified in the AI system?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="riskManagementSystem"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="riskManagementSystem"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="riskManagementSystem"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
+              {renderRadioGroup(
+                "Is a risk management system implemented to address risks identified in the AI system?",
+                "riskManagementSystem",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ],
+                "AI risk register within enterprise risk management."
               )}
 
-              {autoSectionsCompleted.has(10) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Can the AI system be audited by independent third parties?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemAuditable"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemAuditable"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemAuditable"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Can the AI system be audited by independent third parties?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemAuditable"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemAuditable"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="aiSystemAuditable"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
+              {renderRadioGroup(
+                "Can the AI system be audited by independent third parties?",
+                "aiSystemAuditable",
+                [
+                  { value: "yes", label: "Yes" },
+                  { value: "no", label: "No" },
+                  { value: "na", label: "N/A" },
+                ],
+                "Ensure external access to logs/models and documentation for audits."
               )}
 
-              {autoSectionsCompleted.has(10) ? (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are checks conducted at intervals to confirm the AI system
-                    remains trustworthy and meets this risk assessment?
-                  </label>
+              {/* Question: Trustworthiness Checks (Automated) */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Are checks conducted at intervals to confirm the AI system
+                  remains trustworthy and meets this risk assessment?
+                </label>
+
+                {/* Show "Will be auto-completed after evaluation" if not evaluated yet */}
+                {assessmentData.trustworthinessChecks === "" && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-yellow-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          This question will be auto-completed after evaluation
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show actual radio buttons if evaluated */}
+                {assessmentData.trustworthinessChecks !== "" && (
                   <div className="flex items-center space-x-3">
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -7435,10 +7799,10 @@ Add disclaimer if many responses are "no" or missing.`,
                         name="trustworthinessChecks"
                         value="yes"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                        checked
+                        disabled={true}
+                        checked={assessmentData.trustworthinessChecks === "yes"}
                       />
-                      <span className="text-sm text-gray-500">Yes</span>
+                      <span className="text-sm text-gray-700">Yes</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -7446,9 +7810,10 @@ Add disclaimer if many responses are "no" or missing.`,
                         name="trustworthinessChecks"
                         value="no"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.trustworthinessChecks === "no"}
                       />
-                      <span className="text-sm text-gray-500">No</span>
+                      <span className="text-sm text-gray-700">No</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
@@ -7456,58 +7821,17 @@ Add disclaimer if many responses are "no" or missing.`,
                         name="trustworthinessChecks"
                         value="na"
                         className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
+                        disabled={true}
+                        checked={assessmentData.trustworthinessChecks === "na"}
                       />
-                      <span className="text-sm text-gray-500">N/A</span>
+                      <span className="text-sm text-gray-700">N/A</span>
                     </label>
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-evaluated
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Are checks conducted at intervals to confirm the AI system
-                    remains trustworthy and meets this risk assessment?
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="trustworthinessChecks"
-                        value="yes"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">Yes</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="trustworthinessChecks"
-                        value="no"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">No</span>
-                    </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="trustworthinessChecks"
-                        value="na"
-                        className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                        disabled
-                      />
-                      <span className="text-sm text-gray-500">N/A</span>
-                    </label>
-                  </div>
-                  <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-2">
-                    This section will be auto-completed once model is evaluated
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>,
             false,
             getSectionCompletion(10).completed,
